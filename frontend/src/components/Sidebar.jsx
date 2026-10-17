@@ -1,17 +1,28 @@
 import React from 'react';
-import { Database, Users, LogOut, Terminal } from 'lucide-react';
+import { Database, Users, LogOut, Terminal, FileText } from 'lucide-react';
 
 export default function Sidebar({ activeTab = 'users', onSelectTab, user, onLogout }) {
   const isSuperAdmin = user?.role === 'superadmin';
 
-  // Regra: A tela de gestão de usuário, backup e logs só vai aparecer para quem é super admin
-  const menuItems = isSuperAdmin
-    ? [
-        { id: 'backup', label: 'Backup Automático', icon: Database },
-        { id: 'logs', label: 'Gerenciamento de logs', icon: Terminal },
-        { id: 'users', label: 'Gestão de Usuário', icon: Users },
+  // Categorias de itens do menu
+  const sections = [
+    {
+      title: 'APLICAÇÃO',
+      items: [
+        { id: 'forms', label: 'Formulários', icon: FileText }
       ]
-    : [];
+    },
+    ...(isSuperAdmin ? [
+      {
+        title: 'ADMINISTRAÇÃO',
+        items: [
+          { id: 'users', label: 'Gestão de Usuário', icon: Users },
+          { id: 'backup', label: 'Backup Automático', icon: Database },
+          { id: 'logs', label: 'Gerenciamento de logs', icon: Terminal },
+        ]
+      }
+    ] : [])
+  ];
 
   const handleSelect = (id) => {
     if (onSelectTab) {
@@ -33,29 +44,37 @@ export default function Sidebar({ activeTab = 'users', onSelectTab, user, onLogo
               <path d="M8 5v14l11-7z" />
             </svg>
           </div>
-          <span className="logo-text">Projeto Base</span>
+          <span className="logo-text">Formulario</span>
         </div>
 
-        {/* Navigation Buttons (Removido 'Meus vídeos') */}
+        {/* Navigation Buttons com Categorias */}
         <nav className="nav-menu">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`nav-button ${isActive ? 'active' : ''}`}
-                onClick={() => handleSelect(item.id)}
-                data-testid={`nav-item-${item.id}`}
-              >
-                <Icon className="nav-icon" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+          {sections.map((section) => (
+            <div key={section.title} className="nav-category-section">
+              <div className="nav-category-header" data-testid={`category-${section.title.toLowerCase()}`}>
+                {section.title}
+              </div>
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`nav-button ${isActive ? 'active' : ''}`}
+                    onClick={() => handleSelect(item.id)}
+                    data-testid={`nav-item-${item.id}`}
+                  >
+                    <Icon className="nav-icon" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       </div>
+
 
       {/* User profile footer with Logout */}
       <div className="sidebar-footer">

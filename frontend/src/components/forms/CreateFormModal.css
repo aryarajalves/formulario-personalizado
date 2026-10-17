@@ -1,0 +1,163 @@
+/* Overlay translúcido escuro - padrão de segurança e estética */
+.create-form-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Card centralizado limpo */
+.create-form-modal-card {
+  position: relative;
+  background: #ffffff;
+  color: #111827;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Botão Fechar no canto superior direito */
+.create-form-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.create-form-close-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.esc-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+/* Conteúdo */
+.create-form-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.create-form-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 28px;
+  line-height: 1.3;
+}
+
+.create-form-input-wrapper {
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.create-form-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 12px 0;
+  font-size: 18px;
+  text-align: center;
+  color: #111827;
+  outline: none;
+  background: transparent;
+  transition: border-color 0.2s ease;
+}
+
+.create-form-input::placeholder {
+  color: #9ca3af;
+}
+
+.create-form-input:focus {
+  border-bottom-color: #2563eb;
+}
+
+.create-form-error-msg {
+  color: #ef4444;
+  font-size: 14px;
+  margin-top: -16px;
+  margin-bottom: 20px;
+}
+
+/* Ações */
+.create-form-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.create-form-submit-btn {
+  background: #374151;
+  color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 36px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  min-width: 180px;
+  justify-content: center;
+}
+
+.create-form-submit-btn:hover:not(:disabled) {
+  background: #1f2937;
+  transform: translateY(-1px);
+}
+
+.create-form-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spinner-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

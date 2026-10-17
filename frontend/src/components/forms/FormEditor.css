@@ -1,0 +1,468 @@
+/* ========================================================
+   ESTILOS BASE DO FORMEDITOR, SIDEBAR E PAINEL DIREITO
+   ======================================================== */
+@import './editor/EditorCanvas.css';
+@import './editor/EditorScreensPreview.css';
+@import './editor/IntegrationsTab.css';
+@import './editor/ShareTab.css';
+@import './editor/ResultsTab.css';
+
+/* Layout completo do FormEditor */
+.form-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+/* Navbar */
+.editor-navbar {
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.form-title-edit-area {
+  display: flex;
+  align-items: center;
+}
+
+.editor-form-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.editor-form-title:hover {
+  background: #f1f5f9;
+}
+
+.edit-title-icon {
+  color: #94a3b8;
+}
+
+.title-edit-input {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  padding: 4px 8px;
+  outline: none;
+}
+
+/* Abas Centrais da Navbar */
+.navbar-center-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.nav-tab.active {
+  background: #1e293b;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Workspace de 3 colunas */
+.editor-workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Painel Esquerdo (Lista de Questões e Telas) */
+.editor-left-panel {
+  width: 280px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.left-panel-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 14px 0 14px;
+  gap: 16px;
+}
+
+.panel-subtab {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  padding-bottom: 10px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.panel-subtab.active {
+  color: #0f172a;
+  font-weight: 600;
+  border-bottom-color: #0f172a;
+}
+
+.questions-sidebar-content {
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.questions-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.question-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.question-nav-item:hover {
+  background: #f1f5f9;
+}
+
+.question-nav-item.active {
+  background: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.15);
+}
+
+.question-idx-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.question-nav-item.active .question-idx-badge {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.question-nav-label {
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.question-required-star-icon {
+  flex-shrink: 0;
+  margin-left: 2px;
+  margin-right: 4px;
+}
+
+.delete-question-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.delete-question-btn:hover {
+  color: #ef4444;
+}
+
+.add-question-dashed-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+}
+
+.add-question-dashed-btn:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Telas Finais e Boas-Vindas na Sidebar */
+.ending-screens-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.ending-screen-badge-icon {
+  width: 22px;
+  height: 22px;
+  background: #fdf2f8;
+  color: #db2777;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ending-nav-item.active {
+  border-color: #db2777 !important;
+  background: #fdf2f8 !important;
+}
+
+.add-ending-btn {
+  color: #db2777 !important;
+  border-color: #fbcfe8 !important;
+  margin-top: 8px;
+}
+
+.add-ending-btn:hover {
+  background: #fdf2f8 !important;
+}
+
+.welcome-screen-sidebar-group {
+  margin-bottom: 8px;
+}
+
+.welcome-screen-badge-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #c084fc;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.welcome-nav-item.active .welcome-screen-badge-icon {
+  background: #a855f7;
+}
+
+.add-welcome-btn {
+  border-color: #d8b4fe;
+  color: #9333ea;
+  margin-top: 4px;
+}
+
+.add-welcome-btn:hover {
+  background: #faf5ff;
+  border-color: #a855f7;
+  color: #7e22ce;
+}
+
+/* Painel Direito (Configurações) */
+.editor-right-panel {
+  width: 300px;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.right-panel-body {
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.config-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.config-form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.config-change-type-btn {
+  background: transparent;
+  border: none;
+  color: #3b82f6;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.config-change-type-btn:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.config-type-badge {
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.config-type-badge.clickable {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s ease;
+}
+
+.config-type-badge.clickable:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.config-type-badge-arrow {
+  color: #64748b;
+}
+
+.config-readonly-input,
+.config-text-input {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+}
+
+.config-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  margin-top: 10px;
+}
+
+.config-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.editor-loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 12px;
+  color: #64748b;
+}

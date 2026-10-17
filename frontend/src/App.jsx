@@ -8,6 +8,8 @@ import LogManagement from './components/LogManagement';
 import Register from './components/Register';
 import ResetPassword from './components/ResetPassword';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
+import FormsManagement from './components/forms/FormsManagement';
+import PublicFormRespondent from './components/forms/PublicFormRespondent';
 import { useToast } from './context/ToastContext';
 import { AUTH_EXPIRED_EVENT } from './services/authInterceptor';
 
@@ -15,6 +17,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isEditingForm, setIsEditingForm] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('active_tab') || 'users';
   });
@@ -84,6 +87,12 @@ function App() {
     );
   }
 
+  // Se o caminho for de resposta pública a um formulário (/form/:slug)
+  if (pathname.startsWith('/form/')) {
+    const slug = pathname.replace('/form/', '').split('/')[0];
+    return <PublicFormRespondent slug={slug} />;
+  }
+
   // Se o caminho for de cadastro via convite (/register ou ?token=...)
   const isRegisterPage = pathname.includes('/register') || (window.location.search.includes('token=') && !isResetPasswordPage);
 
@@ -107,20 +116,29 @@ function App() {
 
   return (
     <div className="app-container">
-      <Sidebar
-        activeTab={activeTab}
-        onSelectTab={handleSelectTab}
-        user={user}
-        onLogout={handlePromptLogout}
-      />
+      {!isEditingForm && (
+        <Sidebar
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+          user={user}
+          onLogout={handlePromptLogout}
+        />
+      )}
       <main className="main-content" aria-label="Conteúdo Principal">
-        {isSuperAdmin ? (
+        {activeTab === 'forms' && (
+          <FormsManagement 
+            currentUser={user} 
+            onEditStateChange={setIsEditingForm}
+          />
+        )}
+        {isSuperAdmin && (
           <>
             {activeTab === 'users' && <UserManagement currentUser={user} />}
             {activeTab === 'backup' && <AutomatedBackup currentUser={user} />}
             {activeTab === 'logs' && <LogManagement currentUser={user} />}
           </>
-        ) : (
+        )}
+        {!isSuperAdmin && activeTab !== 'forms' && (
           <div className="restricted-access-container user-welcome-container" data-testid="restricted-access-screen">
             <div className="restricted-card user-welcome-card">
               <div className="user-welcome-icon-box">

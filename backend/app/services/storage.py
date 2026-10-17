@@ -153,7 +153,9 @@ def rename_backup_file(old_s3_key: str, old_filename: str, new_filename: str, fo
             logger.info(f"Arquivo renomeado no S3 de {old_s3_key} para {new_s3_key}")
         except Exception as e:
             logger.error(f"Erro ao renomear arquivo no S3: {e}")
-            raise RuntimeError(f"Falha ao renomear arquivo no S3: {e}")
+            old_local = os.path.join("/app/backups_local", old_filename)
+            if not os.path.exists(old_local):
+                raise RuntimeError(f"Falha ao renomear arquivo no S3: {e}")
 
     # Fallback local
     old_local = os.path.join("/app/backups_local", old_filename)

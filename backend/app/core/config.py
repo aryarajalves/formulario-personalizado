@@ -6,6 +6,11 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 
+    def __init__(self, **values):
+        super().__init__(**values)
+        if self.DATABASE_URL.startswith("postgresql://"):
+            self.DATABASE_URL = self.DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
     SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecret-jwt-key-projeto-base-981273491")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
@@ -31,6 +36,11 @@ class Settings(BaseSettings):
     BACKBLAZE_CDN_URL: str = os.getenv("BACKBLAZE_CDN_URL", "")
     B2_FOLDER: str = os.getenv("B2_FOLDER", "projetobase/backups/")
     B2_RETENTION_MAX: int = int(os.getenv("B2_RETENTION_MAX", "30"))
+
+    # Google Calendar OAuth 2.0
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/forms/integrations/google-calendar/callback")
 
     model_config = SettingsConfigDict(case_sensitive=True)
 

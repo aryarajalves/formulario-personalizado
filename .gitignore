@@ -58,3 +58,6 @@ modal_saved_*.png
 Thumbs.db
 *.swp
 *.swo
+*.bak
+*.tmp
+

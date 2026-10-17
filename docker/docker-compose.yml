@@ -1,18 +1,18 @@
-name: projeto-base
-
+name: formulario
+ 
 services:
   db:
     image: postgres:16-alpine
-    container_name: projeto_base_db
+    container_name: formulario_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: projetobase
+      POSTGRES_DB: formulariodb
     ports:
-      - "5435:5432"
+      - "5437:5432"
     volumes:
-      - projeto_base_pg_data:/var/lib/postgresql/data
+      - formulario_pg_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -23,7 +23,7 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    container_name: projeto_base_backend
+    container_name: formulario_backend
     restart: unless-stopped
     depends_on:
       db:
@@ -31,7 +31,7 @@ services:
     env_file:
       - ../backend/.env
     ports:
-      - "8000:8000"
+      - "8020:8000"
     volumes:
       - ../backend:/app
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -40,12 +40,12 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
-    container_name: projeto_base_frontend
+    container_name: formulario_frontend
     restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "3000:80"
+      - "3002:80"
 
 volumes:
-  projeto_base_pg_data:
+  formulario_pg_data:

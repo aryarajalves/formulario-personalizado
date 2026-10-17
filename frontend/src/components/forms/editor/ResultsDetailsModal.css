@@ -1,0 +1,232 @@
+/* ========================================================
+   MODAL DE RESPOSTAS DETALHADAS (PREMIUM & CENTRADO)
+   ======================================================== */
+.response-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.response-modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.response-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.response-modal-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.response-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #0284c7;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.response-modal-title-box h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.response-modal-close-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.response-modal-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.response-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Grid de Informações do Lead */
+.response-lead-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.lead-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lead-info-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.lead-info-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+/* Seção de Perguntas e Respostas */
+.response-qa-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.response-qa-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+}
+
+.response-qa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.response-qa-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.response-qa-card:hover {
+  border-color: #cbd5e1;
+}
+
+.response-qa-question {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.qa-num {
+  display: inline-block;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.qa-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.response-qa-answer {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 1px solid #f1f5f9;
+}
+
+.response-qa-answer p {
+  margin: 0;
+  font-size: 13px;
+  color: #0f172a;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.response-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.response-modal-primary-close-btn {
+  padding: 9px 20px;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.response-modal-primary-close-btn:hover {
+  background: #1e293b;
+}

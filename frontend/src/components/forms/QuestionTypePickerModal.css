@@ -1,0 +1,151 @@
+/* Modal seletor de tipos de questão */
+.type-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.type-picker-card {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 820px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #e2e8f0;
+  padding: 24px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.type-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+.type-picker-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.type-picker-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.type-picker-close-btn:hover {
+  color: #0f172a;
+}
+
+/* Grid de categorias */
+.type-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 24px;
+}
+
+.type-category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.type-category-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.type-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.type-option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.type-option-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateX(2px);
+}
+
+.type-icon-wrapper {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.type-cat-escolhas {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.type-cat-informaesdecontato {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.type-cat-textoenmero {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.type-cat-avaliaoescalas {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.type-cat-arquivo {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.type-cat-integraes {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.type-option-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

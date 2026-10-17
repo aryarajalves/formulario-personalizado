@@ -1,91 +1,151 @@
-# Projeto Base
+# 📋 Plataforma de Formulários Personalizados (Formulário Personalizado)
 
-Template base e robusto para sistemas modernos com **FastAPI (Backend)**, **React + Vite (Frontend)**, banco de dados **PostgreSQL**, integração de **Backups em Nuvem (Backblaze B2 / S3)** e **Gerenciamento de Logs de Contêineres** orquestrados via **Docker**.
+Plataforma completa, moderna e flexível para **Criação, Edição, Compartilhamento e Análise de Formulários Interativos**, construída com **FastAPI (Backend)**, **React + Vite (Frontend)**, **PostgreSQL** e arquitetura containerizada via **Docker**.
+
+A solução oferece uma experiência intuitiva no estilo *Typeform* com transições suaves, múltiplos tipos de perguntas, lógica condicional visual, personalização de identidade visual, painel completo de respostas detalhadas e parciais, além de integrações diretas com **Webhooks** e **Google Calendar**.
 
 ---
 
 ## ✨ Principais Funcionalidades
 
-- 🔐 **Autenticação Segura JWT**: Sistema de login completo com perfis (Superadmin, Admin e Usuário), validação e expiração automática de token com logout instantâneo.
-- 👥 **Gestão de Usuários e Convites**: Criação de convites com link expirável, redefinição de senha e gestão de permissões.
-- 💾 **Backup Automático & Manual no S3**:
-  - Geração de dumps compactados (`.dump.gz`) do PostgreSQL;
-  - Suporte a nomes customizados de backup com timestamp no **Horário Oficial de Brasília (UTC-3)**;
-  - Renomeação de backups existentes diretamente no S3/B2 e banco de dados;
-  - Agendador automático periódico (APScheduler) com política de retenção FIFO configurável;
-  - Restauração de banco de dados e download seguro.
-- 🖥️ **Gerenciamento Avançado de Logs**:
-  - Visualização em tempo real dos logs dos contêineres Docker da aplicação (`backend` e `frontend`) via socket Unix nativo;
-  - Timestamps padronizados automaticamente no **Horário de Brasília (America/Sao_Paulo - UTC-3)** para todos os contêineres;
-  - **Filtro por Data e Horário:** Seleção de dias específicos e janelas horárias com resgate histórico via `since` e `until` da Docker API;
-  - **Classificação Visual e Separação por Tipo:** Filtros rápidos com contadores e badges coloridos (`Todos`, `Info`, `Avisos`, `Erros`, `HTTP 2xx/3xx/4xx/5xx`);
-  - Busca e filtro textual dinâmico, seletor de quantidade de linhas (`--tail`), auto-refresh a cada 4s e botão de cópia de logs formatados.
+### 🎨 Criador & Editor de Formulários (Form Builder)
+- **Editor Visual Interativo:** Criação fluida com tela de boas-vindas (*Welcome Screen*), tela de perguntas modulares e tela de finalização (*Ending Screen*).
+- **Tipos Diversificados de Pergunta:**
+  - 📝 **Texto Curto / Texto Longo (Parágrafo)**;
+  - 🔘 **Múltipla Escolha & Caixa de Seleção**;
+  - ✉️ **E-mail & Telefone/WhatsApp** (com validações de formato);
+  - 🔢 **Números & Escala de Avaliação / Estrelas**;
+  - 📅 **Agendamento com Google Calendar** (seleção de horários disponíveis em tempo real).
+- **Personalização de Design:** Cores primárias/secundárias, plano de fundo, tipografia e tema claro/escuro.
+- **Configurações Globais:** Personalização de título, descrição, slug público único e mensagens personalizadas.
+
+### 🌐 Resposta Pública (Public Respondent)
+- **Experiência Imersiva (Estilo Typeform):** Navegação fluida pergunta a pergunta, atalhos de teclado (Enter, setas) e suporte total a dispositivos móveis.
+- **Captura Parcial Automática:** Captura respostas a partir da primeira pergunta preenchida, permitindo visualizar leads incompletos e taxa de abandono do formulário.
+- **Validação em Tempo Real:** Verificação imediata de campos obrigatórios e formatos de contato.
+
+### 📊 Painel de Resultados & Análise (Analytics)
+- **Métricas em Tempo Real:** Total de respostas, respostas completas vs. parciais, taxa de conclusão e visualizações.
+- **Filtros Avançados:** Filtragem rápida por status (`Todos`, `Finalizados`, `Parciais`) e busca textual por dados do lead.
+- **Visualização Detalhada em Modal:** Modal dinâmico para inspecionar respostas completas de cada participante individualmente.
+- **Exportação de Dados:** Exportação de respostas em formato **CSV** e **JSON** para integração com planilhas e pipelines externos.
+- **Timestamps em Horário de Brasília (America/Sao_Paulo):** Exibição cronológica ajustada no fuso local (UTC-3).
+
+### 🔗 Integrações & Automação
+- **Webhooks Customizados:** Disparo de payloads HTTP JSON automáticos a cada preenchimento (parcial ou finalizado) para CRMs, n8n, Make ou Webhooks próprios.
+- **Google Calendar Sync:** Sincronização direta de horários agendados pelo formulário com a agenda do Google.
+
+### 🛡️ Administração, Segurança & Infraestrutura
+- **Autenticação Segura JWT (Argon2id + Pepper):** Proteção criptográfica moderna com perfis de acesso (Superadmin, Admin e Usuário).
+- **Gestão de Convites & Usuários:** Links de convite com expiração automática e recuperação de acesso.
+- **Backups Automáticos & Manuais em Nuvem:**
+  - Snapshots compactados (`.dump.gz`) salvos localmente ou em provedores compatíveis com S3 (AWS S3 / Backblaze B2);
+  - Agendamento periódico configurável via APScheduler com rotação automática FIFO.
+- **Terminal de Logs dos Contêineres:**
+  - Monitoramento dos logs do backend e frontend em tempo real via socket Docker nativo;
+  - Filtro por período, classificação visual (`Info`, `Avisos`, `Erros`, status HTTP) e cópia simplificada.
 
 ---
 
-## 📁 Estrutura de Pastas
+## 📁 Estrutura do Projeto
 
 ```text
-Projeto Base/
-├── backend/                  # API em Python com FastAPI
+formulario-personalizado/
+├── backend/                       # API FastAPI (Python 3.11+)
 │   ├── app/
-│   │   ├── api/v1/endpoints/ # Rotas (users, backups, logs)
-│   │   ├── core/             # Configurações, segurança, database e logger
-│   │   ├── models/           # Modelos SQLAlchemy
-│   │   ├── schemas/          # Schemas Pydantic
-│   │   ├── services/         # Regras de negócio (storage, backups, logs)
-│   │   └── main.py           # Entrypoint da aplicação
-│   ├── tests/                # Testes unitários com pytest
+│   │   ├── api/v1/endpoints/      # Rotas (forms, users, backups, logs)
+│   │   ├── core/                  # Configurações, segurança, database e logger
+│   │   ├── models/                # Modelos SQLAlchemy (Form, FormResponse, User, Backup)
+│   │   ├── schemas/               # Schemas Pydantic para validação e serialização
+│   │   ├── services/              # Serviços de negócio (Google Calendar, Webhooks, S3, Logs)
+│   │   └── main.py                # Ponto de entrada do FastAPI
+│   ├── scripts/                   # Scripts de migração de banco de dados
+│   ├── tests/                     # Testes unitários com Pytest
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-├── frontend/                 # Interface React + Vite
+├── frontend/                      # Aplicação Web em React + Vite
 │   ├── src/
-│   │   ├── components/       # Componentes reutilizáveis
-│   │   │   ├── automated-backup/ # Modais e abas de backup
-│   │   │   ├── user-management/  # Gestão de usuários
-│   │   │   ├── LogManagement.jsx # Terminal de logs dos contêineres
-│   │   │   └── Sidebar.jsx       # Menu de navegação lateral
-│   │   ├── context/          # ToastContext e autenticação
-│   │   ├── services/         # authInterceptor e utilitários
+│   │   ├── components/            # Componentes visuais
+│   │   │   ├── forms/             # Módulo completo de formulários
+│   │   │   │   ├── editor/        # Canvas, painéis e abas de edição e resultados
+│   │   │   │   ├── PublicFormRespondent.jsx # Interface pública para o respondente
+│   │   │   │   └── FormsManagement.jsx      # Listagem e gestão de formulários
+│   │   │   ├── automated-backup/  # Modais e gestão de backups
+│   │   │   ├── user-management/   # Gestão de usuários e permissões
+│   │   │   ├── LogManagement.jsx  # Visualizador de logs dos contêineres
+│   │   │   └── Sidebar.jsx        # Menu de navegação lateral
+│   │   ├── context/               # Provedores de contexto (Toast, Auth)
+│   │   ├── services/              # Cliente HTTP com interceptor JWT
 │   │   └── App.jsx
 │   ├── Dockerfile
 │   ├── nginx.conf
 │   └── package.json
 │
-└── docker/                   # Orquestração de contêineres
-    └── docker-compose.yml
+├── scripts/                       # Utilitários e auditoria de segurança (audit_security.py)
+├── docker/                        # Orquestração com Docker Compose
+│   └── docker-compose.yml
+└── README.md
 ```
 
 ---
 
-## 🚀 Como Executar com Docker
+## 🚀 Como Executar o Projeto
 
-Para subir todo o ecossistema (PostgreSQL, Backend FastAPI e Frontend Nginx):
+### Pré-requisitos
+- [Docker](https://www.docker.com/) e Docker Compose instalados;
+- Portas `3000`, `8000` e `5435` livres no ambiente.
 
+### 1. Clonar o Repositório
+```bash
+git clone https://github.com/aryarajalves/formulario-personalizado.git
+cd formulario-personalizado
+```
+
+### 2. Configurar Variáveis de Ambiente
+Copie o arquivo de exemplo e configure suas variáveis de ambiente:
+```bash
+cp backend/.env.example backend/.env
+```
+
+### 3. Subir os Contêineres Docker
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-- **Frontend**: `http://localhost:3000`
-- **Backend API**: `http://localhost:8000`
-- **Documentação Swagger**: `http://localhost:8000/docs`
-- **PostgreSQL**: `localhost:5435`
+Acessos disponíveis:
+- **Aplicação Web (Frontend):** `http://localhost:3000`
+- **API FastAPI (Backend):** `http://localhost:8000`
+- **Documentação Interativa Swagger:** `http://localhost:8000/docs`
+- **Banco PostgreSQL:** `localhost:5435`
 
 ---
 
-## 🧪 Como Rodar os Testes Unitários
+## 🧪 Testes Unitários e Validação
 
-### Frontend (Vitest + React Testing Library)
+### Executar Testes do Frontend (Vitest)
 ```bash
 cd frontend
 npm test -- --run
 ```
 
-### Backend (Pytest)
+### Executar Testes do Backend (Pytest)
 ```bash
+# Via container Docker:
 docker compose -f docker/docker-compose.yml exec backend pytest
-# ou localmente:
+
+# Ou localmente (com ambiente virtual ativo):
 cd backend
 pytest
 ```
+
+### Auditoria Unificada de Segurança das Dependências
+Para verificar vulnerabilidades conhecidas em pacotes Python (`pip-audit`) e Node (`npm audit`):
+```bash
+python scripts/audit_security.py
+```
+
+---
+
+## 📄 Licença
+Distribuído sob licença proprietária. Todos os direitos reservados.

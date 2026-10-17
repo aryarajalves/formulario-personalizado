@@ -1,0 +1,104 @@
+/* ========================================================
+   TELAS ESPECIAIS NO CANVAS: BOAS-VINDAS E TELAS FINAIS
+   ======================================================== */
+.ending-screen-preview-box,
+.welcome-screen-preview-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.ending-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(219, 39, 119, 0.1);
+  color: #db2777;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+}
+
+.interactive-ending-desc-input {
+  width: 100%;
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 16px;
+  color: #cbd5e1;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+  resize: none;
+  line-height: 1.5;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.interactive-ending-desc-input:hover,
+.interactive-ending-desc-input:focus {
+  border-color: #475569;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ending-preview-action-btn-wrap,
+.welcome-preview-action-btn-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.ending-preview-action-btn,
+.welcome-preview-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 12px 26px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ending-preview-action-btn:hover,
+.welcome-preview-action-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.5);
+}
+
+.welcome-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+}
+
+.welcome-title-input {
+  text-align: center;
+  font-size: 28px;
+}
+
+.welcome-desc-input {
+  text-align: center;
+}

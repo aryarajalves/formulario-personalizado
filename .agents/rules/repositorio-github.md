@@ -6,7 +6,7 @@ trigger: always_on
 
 O repositório oficial do projeto é:
 
-**URL:** https://github.com/aryarajalves/projeto-base.git
+**URL:** https://github.com/aryarajalves/formulario-personalizado.git
 
 **Protocolo Obrigatório:**
 1. Todo `git push` deve ser direcionado para este repositório.

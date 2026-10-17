@@ -551,5 +551,141 @@ def test_docker_logs_endpoints():
     unauth_res = client.get("/api/v1/logs/backend")
     assert unauth_res.status_code == 401
 
+def test_forms_endpoints_crud_flow():
+    # 1. Login superadmin para pegar token
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": settings.SUPERADMIN_EMAIL,
+        "password": settings.SUPERADMIN_PASSWORD
+    })
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 2. Criar novo formulário
+    payload = {"title": "Pesquisa de Satisfação do Cliente"}
+    create_res = client.post("/api/v1/forms", json=payload, headers=headers)
+    assert create_res.status_code == 201
+    form_data = create_res.json()
+    assert form_data["title"] == "Pesquisa de Satisfação do Cliente"
+    assert form_data["status"] == "PUBLICADO"
+    assert form_data["responses_count"] == 0
+    assert form_data["completion_rate"] == 0.0
+    assert len(form_data["slug"]) > 0
+    form_id = form_data["id"]
+
+    # 3. Listar formulários
+    list_res = client.get("/api/v1/forms", headers=headers)
+    assert list_res.status_code == 200
+    forms = list_res.json()
+    assert any(f["id"] == form_id for f in forms)
+
+    # 4. Falha com título vazio
+    fail_res = client.post("/api/v1/forms", json={"title": "   "}, headers=headers)
+    assert fail_res.status_code == 400
+
+    # 5. Atualizar formulário (questões e webhook_url)
+    update_res = client.put(f"/api/v1/forms/{form_id}", json={
+        "title": "Pesquisa de Satisfação Atualizada",
+        "webhook_url": "https://webhook.site/teste-unitario",
+        "questions": [
+            {
+                "id": "q1",
+                "type": "short_text",
+                "title": "Qual seu nome?",
+                "required": True
+            }
+        ]
+    }, headers=headers)
+    assert update_res.status_code == 200
+    updated_data = update_res.json()
+    assert updated_data["title"] == "Pesquisa de Satisfação Atualizada"
+    assert updated_data["webhook_url"] == "https://webhook.site/teste-unitario"
+    assert len(updated_data["questions"]) == 1
+
+    # 6. Testar webhook sem webhook_url configurada (espera 400)
+    # Primeiro limpa a url
+    client.put(f"/api/v1/forms/{form_id}", json={"webhook_url": ""}, headers=headers)
+    test_webhook_fail = client.post(f"/api/v1/forms/{form_id}/test-webhook", headers=headers)
+    assert test_webhook_fail.status_code == 400
+
+    # 7. Acesso público ao formulário pelo slug (sem login)
+    public_res = client.get(f"/api/v1/forms/public/{form_data['slug']}")
+    assert public_res.status_code == 200
+    pub_data = public_res.json()
+    assert pub_data["slug"] == form_data["slug"]
+    assert pub_data["title"] == "Pesquisa de Satisfação Atualizada"
+
+    # 7.1 Envio de resposta pública
+    submit_res = client.post(f"/api/v1/forms/public/{form_data['slug']}/submit", json={
+        "answers": [
+            {"question_title": "Qual é o seu nome completo?", "answer": "Carlos Eduardo"},
+            {"question_title": "Qual seu email?", "answer": "carlos@teste.com"}
+        ]
+    })
+    assert submit_res.status_code == 200
+    assert submit_res.json()["success"] is True
+
+    # 7.2 Testar salvamento parcial (auto-save na 1ª pergunta)
+    form_slug = form_data["slug"]
+    partial_res = client.post(f"/api/v1/forms/public/{form_slug}/save-partial", json={
+        "current_step": 1,
+        "answers": [
+            {"question_title": "Qual é o seu nome completo?", "answer": "Lead Parcial"}
+        ]
+    })
+    assert partial_res.status_code == 200
+    part_data = partial_res.json()
+    assert part_data["success"] is True
+    assert part_data["status"] == "PARCIAL"
+    partial_id = part_data["response_id"]
+
+    # 7.3 Listagem paginada de respostas com filtro por status e horário de Brasília
+    responses_res = client.get(f"/api/v1/forms/{form_id}/responses?page=1&limit=20&status=PARCIAL", headers=headers)
+    assert responses_res.status_code == 200
+    res_data = responses_res.json()
+    assert "items" in res_data
+    assert any(item["id"] == partial_id for item in res_data["items"])
+    assert res_data["counts"]["partial"] >= 1
+
+    # 7.4 Testar rota de exportação CSV
+    csv_res = client.get(f"/api/v1/forms/{form_id}/responses/export?status=ALL", headers=headers)
+    assert csv_res.status_code == 200
+    assert "text/csv" in csv_res.headers.get("content-type", "")
+    assert "Carlos Eduardo" in csv_res.text or "Lead Parcial" in csv_res.text
+
+    # 7.3 Atualizar integração com Google Calendar
+    cal_res = client.put(f"/api/v1/forms/{form_id}", json={
+        "google_calendar_connected": True,
+        "google_calendar_email": "agenda@gmail.com"
+    }, headers=headers)
+    assert cal_res.status_code == 200
+    assert cal_res.json()["google_calendar_connected"] is True
+    assert cal_res.json()["google_calendar_email"] == "agenda@gmail.com"
+
+    # 7.4 Testar rotas de OAuth do Google Calendar
+    # Testa auth-url (sem client_id configurado retorna 400 ou com mock)
+    auth_url_res = client.get(f"/api/v1/forms/{form_id}/integrations/google-calendar/auth-url", headers=headers)
+    assert auth_url_res.status_code in [200, 400]
+
+    # Testa desconexão
+    disc_res = client.post(f"/api/v1/forms/{form_id}/integrations/google-calendar/disconnect", headers=headers)
+    assert disc_res.status_code == 200
+    assert disc_res.json()["success"] is True
+
+    # Valida que formulário agora está desconectado
+    form_check = client.get(f"/api/v1/forms", headers=headers)
+    curr_form = next(f for f in form_check.json() if f["id"] == form_id)
+    assert curr_form["google_calendar_connected"] is False
+
+    # 8. Excluir formulário
+    del_res = client.delete(f"/api/v1/forms/{form_id}", headers=headers)
+    assert del_res.status_code == 200
+
+    # 9. Validar que foi removido
+    list_after = client.get("/api/v1/forms", headers=headers)
+    assert not any(f["id"] == form_id for f in list_after.json())
+
+
+
 
 

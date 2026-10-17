@@ -1,0 +1,152 @@
+/* ========================================================
+   COMPARTILHAR FORMULÁRIO (LINK PÚBLICO E PREVIEW)
+   ======================================================== */
+.share-view-container {
+  flex: 1;
+  background: #f8fafc;
+  overflow-y: auto;
+  padding: 40px 32px 60px 32px;
+}
+
+.share-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.share-header {
+  margin-bottom: 24px;
+}
+
+.share-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px 0;
+}
+
+.share-header p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.share-link-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+.share-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.share-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.share-card-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.share-card-header p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.share-link-input-group {
+  margin-bottom: 32px;
+}
+
+.share-url-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 5px;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.share-url-box:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.share-url-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+  outline: none;
+  min-width: 0;
+}
+
+.share-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.copy-share-btn:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.open-share-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.open-share-link-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
