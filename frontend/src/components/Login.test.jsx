@@ -10,10 +10,11 @@ describe('Login Component', () => {
         <Login />
       </ToastProvider>
     );
-    expect(screen.getByText('Projeto Base')).toBeInTheDocument();
+    expect(screen.getByText('Formulário')).toBeInTheDocument();
     expect(screen.getByTestId('login-email-input')).toBeInTheDocument();
     expect(screen.getByTestId('login-password-input')).toBeInTheDocument();
     expect(screen.getByTestId('login-submit-btn')).toBeInTheDocument();
+
   });
 
   it('toggles password visibility when clicking eye button', () => {

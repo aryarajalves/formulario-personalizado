@@ -23,6 +23,7 @@ class Form(Base):
     google_calendar_token_expiry = Column(DateTime, nullable=True)
     welcome_screen = Column(JSON, default=dict, nullable=True)
     ending_screens = Column(JSON, default=list, nullable=False)
+    theme = Column(JSON, default=dict, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)

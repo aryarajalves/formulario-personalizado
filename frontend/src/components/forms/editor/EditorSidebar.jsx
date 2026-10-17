@@ -1,5 +1,6 @@
 import React from 'react';
 import { Hand, Trash2, Plus, Star, ExternalLink } from 'lucide-react';
+import DesignThemePanel from './DesignThemePanel';
 
 export default function EditorSidebar({
   activeTab,
@@ -15,7 +16,9 @@ export default function EditorSidebar({
   openTypePickerForAdd,
   promptDeleteQuestion,
   handleAddEndingScreen,
-  promptDeleteEndingScreen
+  promptDeleteEndingScreen,
+  handleUpdateTheme,
+  saving
 }) {
   return (
     <aside className="editor-left-panel">
@@ -23,26 +26,30 @@ export default function EditorSidebar({
         <button 
           className={`panel-subtab ${activeTab === 'conteudo' ? 'active' : ''}`}
           onClick={() => setActiveTab('conteudo')}
+          data-testid="tab-sidebar-conteudo"
         >
           Conteúdo
         </button>
         <button 
           className={`panel-subtab ${activeTab === 'design' ? 'active' : ''}`}
           onClick={() => setActiveTab('design')}
+          data-testid="tab-sidebar-design"
         >
           Design
         </button>
-        <button 
-          className={`panel-subtab ${activeTab === 'configuracoes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('configuracoes')}
-        >
-          Configurações
-        </button>
       </div>
 
-      <div className="questions-sidebar-content">
-        {/* SEÇÃO TELA DE BOAS VINDAS */}
-        <div className="welcome-screen-sidebar-group">
+      {activeTab === 'design' ? (
+        <DesignThemePanel
+          theme={form?.theme}
+          onUpdateTheme={handleUpdateTheme}
+          saving={saving}
+        />
+      ) : (
+        <div className="questions-sidebar-content">
+          {/* SEÇÃO TELA DE BOAS VINDAS */}
+          <div className="welcome-screen-sidebar-group">
+
           <span className="sidebar-group-title">TELA DE BOAS VINDAS</span>
           {form?.welcome_screen?.enabled ? (
             <div
@@ -184,6 +191,8 @@ export default function EditorSidebar({
           </button>
         </div>
       </div>
+      )}
     </aside>
   );
 }
+

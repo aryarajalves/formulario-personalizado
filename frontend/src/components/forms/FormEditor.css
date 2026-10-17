@@ -6,6 +6,7 @@
 @import './editor/IntegrationsTab.css';
 @import './editor/ShareTab.css';
 @import './editor/ResultsTab.css';
+@import './editor/DesignThemePanel.css';
 
 /* Layout completo do FormEditor */
 .form-editor-container {

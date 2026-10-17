@@ -114,8 +114,12 @@ def update_form(
     if form_in.ending_screens is not None:
         form.ending_screens = form_in.ending_screens
 
+    if form_in.theme is not None:
+        form.theme = form_in.theme
+
     if form_in.webhook_url is not None:
         form.webhook_url = form_in.webhook_url.strip() or None
+
 
 
     if form_in.google_calendar_connected is not None:
@@ -280,8 +284,11 @@ def get_public_form(slug: str, db: Session = Depends(get_db)):
         "slug": form.slug,
         "status": form.status,
         "questions": form.questions or [],
-        "ending_screens": form.ending_screens or []
+        "welcome_screen": form.welcome_screen or {},
+        "ending_screens": form.ending_screens or [],
+        "theme": form.theme or {}
     }
+
 
 
 @router.post("/public/{slug}/save-partial")

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
-import loginBanner from '../assets/login-banner.jpg';
+import { Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight, ClipboardCheck } from 'lucide-react';
+import loginBanner from '../assets/login-banner-form.svg';
 import { useToast } from '../context/ToastContext';
+
 
 export default function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -50,14 +51,13 @@ export default function Login({ onLoginSuccess }) {
       <div className="login-form-side">
         <div className="login-form-container">
           <div className="auth-header text-left">
-            <div className="auth-logo-badge">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
+            <div className="auth-logo-badge" style={{ background: '#eff6ff', color: '#2563eb' }}>
+              <ClipboardCheck size={24} />
             </div>
-            <h2>Projeto Base</h2>
+            <h2>Formulário</h2>
             <p>Informe suas credenciais para acessar o painel</p>
           </div>
+
 
           {error && (
             <div className="auth-error-banner" data-testid="login-error">
@@ -125,23 +125,24 @@ export default function Login({ onLoginSuccess }) {
         </div>
       </div>
 
-      {/* Coluna da Direita: Banner Ilustrativo Moderno e Otimizado */}
+      {/* Coluna da Direita: Banner Ilustrativo Moderno de Formulários */}
       <div className="login-image-side">
         <div className="image-overlay-card">
           <img
             src={loginBanner}
-            alt="Projeto Base Dashboard"
+            alt="Plataforma de Formulários Personalizados"
             className="login-feature-img"
             loading="eager"
             fetchPriority="high"
             decoding="async"
           />
           <div className="image-caption">
-            <h3>Gerenciamento Centralizado</h3>
-            <p>Acesse suas ferramentas e gerencie sua equipe com segurança e alto desempenho.</p>
+            <h3>Formulários Personalizados & Conversão</h3>
+            <p>Crie experiências imersivas pergunta a pergunta, capture leads parciais e analise resultados em tempo real.</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

@@ -656,11 +656,24 @@ def test_forms_endpoints_crud_flow():
     # 7.3 Atualizar integração com Google Calendar
     cal_res = client.put(f"/api/v1/forms/{form_id}", json={
         "google_calendar_connected": True,
-        "google_calendar_email": "agenda@gmail.com"
+        "google_calendar_email": "agenda@gmail.com",
+        "theme": {
+            "primaryColor": "#8b5cf6",
+            "backgroundColor": "#0f0a1c",
+            "textColor": "#f3e8ff",
+            "buttonTextColor": "#ffffff"
+        }
     }, headers=headers)
     assert cal_res.status_code == 200
     assert cal_res.json()["google_calendar_connected"] is True
     assert cal_res.json()["google_calendar_email"] == "agenda@gmail.com"
+    assert cal_res.json()["theme"]["primaryColor"] == "#8b5cf6"
+
+    # Valida que o endpoint público agora entrega o theme
+    pub_theme_res = client.get(f"/api/v1/forms/public/{form_slug}")
+    assert pub_theme_res.status_code == 200
+    assert pub_theme_res.json()["theme"]["primaryColor"] == "#8b5cf6"
+
 
     # 7.4 Testar rotas de OAuth do Google Calendar
     # Testa auth-url (sem client_id configurado retorna 400 ou com mock)

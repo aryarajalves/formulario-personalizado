@@ -78,8 +78,10 @@ export default function FormEditor({ formId, onBack }) {
     handleUpdateWelcomeScreen,
     handleUpdateCurrentQuestion,
     handleSaveTitle,
+    handleUpdateTheme,
     copyShareLink
   } = useFormEditor(formId);
+
 
   if (loading || !form) {
     return (
@@ -221,7 +223,10 @@ export default function FormEditor({ formId, onBack }) {
             promptDeleteQuestion={promptDeleteQuestion}
             handleAddEndingScreen={handleAddEndingScreen}
             promptDeleteEndingScreen={promptDeleteEndingScreen}
+            handleUpdateTheme={handleUpdateTheme}
+            saving={saving}
           />
+
 
           {/* COLUNA CENTRAL: Preview Interativo com seletores Desktop / Tablet / Celular */}
           <EditorCanvas

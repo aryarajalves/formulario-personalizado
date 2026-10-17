@@ -1,0 +1,210 @@
+/* ========================================================
+   PAINEL DE DESIGN E CORES DO FORMULÁRIO
+   ======================================================== */
+.design-theme-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 18px 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.design-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.design-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.design-icon {
+  color: #3b82f6;
+}
+
+.design-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.design-reset-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.design-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.design-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+/* Grid de Temas Pré-definidos */
+.design-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.preset-card:hover {
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.preset-card.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.18);
+}
+
+.preset-preview-pill {
+  width: 100%;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+}
+
+.preset-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.preset-line {
+  width: 50%;
+  height: 4px;
+  border-radius: 2px;
+  opacity: 0.85;
+}
+
+.preset-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.preset-card.active .preset-name {
+  color: #1d4ed8;
+}
+
+/* Campos de Cores Personalizadas */
+.design-color-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.color-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.color-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.color-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.color-desc {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.color-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border: none;
+  cursor: pointer;
+  background: none;
+  border-radius: 6px;
+  padding: 0;
+}
+
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input::-webkit-color-swatch {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.color-hex-tag {
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+}

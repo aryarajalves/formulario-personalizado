@@ -247,9 +247,18 @@ export default function PublicFormRespondent({ slug }) {
   if (inWelcomeScreen && form?.welcome_screen?.enabled) {
     const welcome = form.welcome_screen;
     return (
-      <div className="public-form-screen welcome-screen" data-testid="public-welcome-screen">
+      <div 
+        className="public-form-screen welcome-screen" 
+        style={{
+          background: form?.theme?.backgroundColor || '#090d16',
+          color: form?.theme?.textColor || '#f8fafc'
+        }}
+        data-testid="public-welcome-screen"
+      >
         <div className="public-welcome-card">
-          <h1 className="public-welcome-title">{welcome.title || form.title}</h1>
+          <h1 className="public-welcome-title" style={{ color: form?.theme?.textColor || '#ffffff' }}>
+            {welcome.title || form.title}
+          </h1>
           {welcome.description && (
             <p className="public-welcome-desc">{welcome.description}</p>
           )}
@@ -258,6 +267,10 @@ export default function PublicFormRespondent({ slug }) {
             <button
               type="button"
               className="public-welcome-start-btn"
+              style={{
+                background: form?.theme?.primaryColor || '#2563eb',
+                color: form?.theme?.buttonTextColor || '#ffffff'
+              }}
               onClick={() => setInWelcomeScreen(false)}
               data-testid="start-form-btn"
             >
@@ -270,18 +283,35 @@ export default function PublicFormRespondent({ slug }) {
     );
   }
 
+
   const questions = form.questions || [];
   const currentQ = questions[currentStep] || questions[0];
   const progressPercent = questions.length > 0 ? Math.round(((currentStep + 1) / questions.length) * 100) : 100;
 
+  const themeStyles = {
+    '--form-primary': form?.theme?.primaryColor || '#3b82f6',
+    '--form-bg': form?.theme?.backgroundColor || '#090d16',
+    '--form-text': form?.theme?.textColor || '#f8fafc',
+    '--form-btn-text': form?.theme?.buttonTextColor || '#ffffff',
+    background: form?.theme?.backgroundColor || '#090d16',
+    color: form?.theme?.textColor || '#f8fafc'
+  };
+
   return (
-    <div className="public-form-container">
+    <div className="public-form-container" style={themeStyles}>
       {/* Barra de Progresso Superior */}
       <div className="public-progress-bar-bg">
-        <div className="public-progress-fill" style={{ width: `${progressPercent}%` }} />
+        <div 
+          className="public-progress-fill" 
+          style={{ 
+            width: `${progressPercent}%`,
+            background: form?.theme?.primaryColor ? `linear-gradient(90deg, ${form.theme.primaryColor}, #60a5fa)` : undefined
+          }} 
+        />
       </div>
 
       <header className="public-form-header">
+
         <span className="public-form-brand">{form.title}</span>
         <span className="public-step-indicator">{currentStep + 1} de {questions.length}</span>
       </header>
@@ -456,10 +486,15 @@ export default function PublicFormRespondent({ slug }) {
             <button
               type="button"
               className="public-next-button"
+              style={{
+                background: form?.theme?.primaryColor || '#2563eb',
+                color: form?.theme?.buttonTextColor || '#ffffff'
+              }}
               onClick={handleNext}
               disabled={submitting}
             >
               {submitting ? (
+
                 <span>Enviando...</span>
               ) : currentStep === questions.length - 1 ? (
                 <>

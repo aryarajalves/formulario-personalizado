@@ -337,5 +337,65 @@ describe('FormEditor Component - Navigation, Questions & Modals', () => {
       );
     });
   });
+
+  it('switches to Design tab and customizes form colors and presets', async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          title: 'Formulário com Design',
+          slug: 'form-design',
+          status: 'PUBLICADO',
+          questions: [{ id: 'q1', type: 'short_text', title: 'Pergunta 1' }],
+          theme: { primaryColor: '#3b82f6', backgroundColor: '#090d16' }
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          title: 'Formulário com Design',
+          slug: 'form-design',
+          status: 'PUBLICADO',
+          questions: [{ id: 'q1', type: 'short_text', title: 'Pergunta 1' }],
+          theme: { primaryColor: '#8b5cf6', backgroundColor: '#0f0a1c' }
+        })
+      });
+
+    render(
+      <ToastProvider>
+        <FormEditor formId={1} onBack={() => {}} />
+      </ToastProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('tab-sidebar-design')).toBeDefined();
+    });
+
+    // Clica na aba Design
+    fireEvent.click(screen.getByTestId('tab-sidebar-design'));
+
+    // Verifica que o painel de design renderizou e não há aba Configurações
+    expect(screen.getByTestId('design-theme-panel')).toBeDefined();
+    expect(screen.queryByText('Configurações')).toBeNull();
+
+    // Seleciona o preset Neon Violet
+    const presetNeon = screen.getByTestId('preset-neon-violet');
+    expect(presetNeon).toBeDefined();
+    fireEvent.click(presetNeon);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/forms/1'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: expect.stringContaining('#8b5cf6')
+        })
+      );
+    });
+  });
 });
+
 

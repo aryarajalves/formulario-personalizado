@@ -53,7 +53,14 @@ export default function EditorCanvas({
         </button>
       </div>
 
-      <div className={`canvas-screen-mockup view-${deviceView}`}>
+      <div 
+        className={`canvas-screen-mockup view-${deviceView}`}
+        style={{
+          background: form?.theme?.backgroundColor || '#111827',
+          color: form?.theme?.textColor || '#ffffff'
+        }}
+        data-testid="canvas-mockup"
+      >
         <div className="mockup-window-header">
           <span className="dot red"></span>
           <span className="dot yellow"></span>
@@ -62,6 +69,7 @@ export default function EditorCanvas({
 
         {/* Conteúdo da Questão Selecionada, Tela Final ou Tela de Boas-Vindas */}
         <div className="mockup-body">
+
           {activeItemType === 'welcome_screen' ? (
             <div className="welcome-screen-preview-box" data-testid="welcome-screen-preview-box">
               <div className="welcome-preview-badge">
@@ -92,6 +100,10 @@ export default function EditorCanvas({
                 <button
                   type="button"
                   className="welcome-preview-action-btn"
+                  style={{
+                    background: form?.theme?.primaryColor || '#2563eb',
+                    color: form?.theme?.buttonTextColor || '#ffffff'
+                  }}
                   onClick={() => {
                     setActiveItemType('question');
                     setSelectedQuestionIndex(0);
@@ -135,6 +147,10 @@ export default function EditorCanvas({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ending-preview-action-btn"
+                  style={{
+                    background: form?.theme?.primaryColor || '#2563eb',
+                    color: form?.theme?.buttonTextColor || '#ffffff'
+                  }}
                   onClick={(e) => e.preventDefault()}
                 >
                   <span>{currentEndingScreen?.button_text || 'Acessar nosso site'}</span>
@@ -143,6 +159,7 @@ export default function EditorCanvas({
               </div>
             </div>
           ) : (
+
             <div className="question-preview-box">
               <div className="question-header-tag-row">
                 {editingQuestionTag ? (
@@ -341,11 +358,19 @@ export default function EditorCanvas({
               </div>
 
               <div className="preview-submit-btn-row">
-                <button type="button" className="mockup-next-btn">
+                <button 
+                  type="button" 
+                  className="mockup-next-btn"
+                  style={{
+                    background: form?.theme?.primaryColor || '#2563eb',
+                    color: form?.theme?.buttonTextColor || '#ffffff'
+                  }}
+                >
                   OK <Check size={14} />
                 </button>
                 <span className="press-enter-hint">pressione <strong>Enter ↵</strong></span>
               </div>
+
             </div>
           )}
         </div>

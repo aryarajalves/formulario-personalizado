@@ -108,7 +108,7 @@ export function useFormEditor(formId) {
     }
   };
 
-  const handleSaveForm = async (updatedQuestions, updatedTitle, updatedWebhookUrl, updatedGoogleCal, updatedEndingScreens, updatedWelcomeScreen) => {
+  const handleSaveForm = async (updatedQuestions, updatedTitle, updatedWebhookUrl, updatedGoogleCal, updatedEndingScreens, updatedWelcomeScreen, updatedTheme) => {
     try {
       setSaving(true);
       const token = localStorage.getItem('auth_token');
@@ -117,6 +117,7 @@ export function useFormEditor(formId) {
         questions: updatedQuestions || form?.questions,
         welcome_screen: updatedWelcomeScreen !== undefined ? updatedWelcomeScreen : (form?.welcome_screen || null),
         ending_screens: updatedEndingScreens !== undefined ? updatedEndingScreens : (form?.ending_screens || []),
+        theme: updatedTheme !== undefined ? updatedTheme : (form?.theme || {}),
         webhook_url: updatedWebhookUrl !== undefined ? updatedWebhookUrl : (form?.webhook_url || null)
       };
 
@@ -147,6 +148,7 @@ export function useFormEditor(formId) {
       setSaving(false);
     }
   };
+
 
   const handleConnectGoogleCalendar = async () => {
     try {
@@ -405,6 +407,17 @@ export function useFormEditor(formId) {
     }
   };
 
+  const handleUpdateTheme = (newThemeAttrs, autoSave = true) => {
+    const updatedTheme = {
+      ...(form?.theme || {}),
+      ...newThemeAttrs
+    };
+    setForm(prev => ({ ...prev, theme: updatedTheme }));
+    if (autoSave) {
+      handleSaveForm(null, null, undefined, undefined, undefined, undefined, updatedTheme);
+    }
+  };
+
   const copyShareLink = () => {
     if (!form?.slug) return;
     const url = `${window.location.origin}/form/${form.slug}`;
@@ -413,6 +426,8 @@ export function useFormEditor(formId) {
     addToast('Link copiado para a área de transferência!', 'success');
     setTimeout(() => setCopiedLink(false), 2500);
   };
+
+
 
   return {
     form,
@@ -473,6 +488,8 @@ export function useFormEditor(formId) {
     handleUpdateWelcomeScreen,
     handleUpdateCurrentQuestion,
     handleSaveTitle,
+    handleUpdateTheme,
     copyShareLink
   };
 }
+

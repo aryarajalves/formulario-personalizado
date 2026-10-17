@@ -53,6 +53,14 @@ Registro de migrações e atualizações estruturais do banco de dados (PostgreS
   - `form_responses`: Adicionadas colunas `status` (VARCHAR DEFAULT 'CONCLUIDO'), `completion_percent` (FLOAT DEFAULT 100.0) e `updated_at` (TIMESTAMP DEFAULT CURRENT_TIMESTAMP).
 - **Script de Migração:** `backend/scripts/add_response_status_and_completion_columns.py`
 
+---
+
+### [17/10/2026] - Personalização de Cores e Temas do Formulário (Design)
+- **Tabelas Afetadas:**
+  - `forms`: Adicionada coluna `theme` (JSON DEFAULT '{}').
+- **Script de Migração:** `backend/scripts/add_theme_column.py`
+
+
 
 
 
