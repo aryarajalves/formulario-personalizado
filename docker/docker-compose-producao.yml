@@ -1,0 +1,174 @@
+version: "3.7"
+
+# ==============================================================================
+# Stack de Produção - Formulário Personalizado (Docker Swarm + Traefik)
+# ==============================================================================
+# Observações:
+# 1. O banco de dados PostgreSQL é externo (já existente na infraestrutura / Swarm).
+# 2. Utiliza exclusivamente a rede externa 'network_swarm_public'.
+# 3. Todos os serviços utilizam o prefixo 'formulario_'.
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Serviço de Backend (FastAPI + Python)
+  # ----------------------------------------------------------------------------
+  formulario_backend:
+    image: ${BACKEND_IMAGE:-aryalvesfernandes/formulario:backend-1.0.0}
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    volumes:
+      - formulario_backups_local:/app/backups_local
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      network_swarm_public:
+        aliases:
+          - formulario_backend
+    environment:
+      #########################################################
+      # Configurações Gerais da Aplicação #####################
+      #########################################################
+      - TZ=America/Sao_Paulo
+      - PROJECT_NAME=Formulário Personalizado
+      - API_V1_STR=/api/v1
+      - ENVIRONMENT=production
+      - SERVER_URL=${SERVER_URL:-https://${FRONTEND_DOMAIN:-formulario.seudominio.com}}
+      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN:-formulario.seudominio.com}
+      - API_DOMAIN=${API_DOMAIN:-api-formulario.seudominio.com}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://${API_DOMAIN:-api-formulario.seudominio.com}}
+
+      #########################################################
+      # Configuração do Banco de Dados (PostgreSQL Externo) ###
+      #########################################################
+      - DATABASE_URL=${DATABASE_URL}
+
+      #########################################################
+      # Configurações de Segurança e Autenticação (JWT) #######
+      #########################################################
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      - SECURITY_PASSWORD_PEPPER=${SECURITY_PASSWORD_PEPPER}
+      - SECURITY_ENCRYPTION_KEY=${SECURITY_ENCRYPTION_KEY}
+
+      #########################################################
+      # Credenciais Iniciais do Super Administrador ##########
+      #########################################################
+      - SUPERADMIN_NAME=${SUPERADMIN_NAME:-Super Admin}
+      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:-admin@seudominio.com}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
+
+      #########################################################
+      # Envio de E-mails Transacionais (Brevo API) ############
+      #########################################################
+      - BREVO_API_KEY=${BREVO_API_KEY:-xkeysib-sua-chave-aqui}
+      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL:-suporte@seudominio.com}
+      - BREVO_SENDER_NAME=${BREVO_SENDER_NAME:-Formulário Personalizado}
+
+      #########################################################
+      # Armazenamento em Nuvem / Backups (Backblaze B2 / S3) ##
+      #########################################################
+      - BACKBLAZE_ENDPOINT_URL=${BACKBLAZE_ENDPOINT_URL:-https://s3.us-west-004.backblazeb2.com}
+      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID:-seu-key-id}
+      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY:-sua-application-key}
+      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME:-formulario-producao}
+      - BACKBLAZE_CDN_URL=${BACKBLAZE_CDN_URL:-https://s3.us-west-004.backblazeb2.com/formulario-producao}
+      - B2_FOLDER=${B2_FOLDER:-formulario/backups/}
+      - B2_RETENTION_MAX=${B2_RETENTION_MAX:-30}
+
+      #########################################################
+      # Integração Google Calendar (OAuth 2.0) ################
+      #########################################################
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-https://${API_DOMAIN:-api-formulario.seudominio.com}/api/v1/forms/integrations/google-calendar/callback}
+
+      #########################################################
+      # Rate Limiting (Requisições por minuto por IP) #########
+      #########################################################
+      - RATE_LIMIT_LOGIN=${RATE_LIMIT_LOGIN:-5}
+      - RATE_LIMIT_REGISTER=${RATE_LIMIT_REGISTER:-3}
+      - RATE_LIMIT_VERIFY_OTP=${RATE_LIMIT_VERIFY_OTP:-5}
+      - RATE_LIMIT_PUBLIC_FORMS=${RATE_LIMIT_PUBLIC_FORMS:-30}
+      - RATE_LIMIT_AUTHENTICATED=${RATE_LIMIT_AUTHENTICATED:-200}
+
+      #########################################################
+      # CORS Granular #########################################
+      #########################################################
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://${FRONTEND_DOMAIN:-formulario.seudominio.com}}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2048M
+      labels:
+        # Habilita o Traefik para o Backend
+        - traefik.enable=true
+        # Define as regras de roteamento do Traefik para a API Backend
+        - traefik.http.routers.formulario_backend.rule=Host(`${API_DOMAIN:-api-formulario.seudominio.com}`)
+        # Define o entrypoint seguro com SSL
+        - traefik.http.routers.formulario_backend.entrypoints=websecure
+        # Certificado SSL Let's Encrypt
+        - traefik.http.routers.formulario_backend.tls.certresolver=letsencryptresolver
+        # Define o serviço do Traefik
+        - traefik.http.routers.formulario_backend.service=formulario_backend
+        # Porta interna do FastAPI
+        - traefik.http.services.formulario_backend.loadbalancer.server.port=8000
+        - traefik.http.services.formulario_backend.loadbalancer.passHostHeader=true
+
+  # ----------------------------------------------------------------------------
+  # 2. Serviço de Frontend (Nginx + React App Compilado)
+  # ----------------------------------------------------------------------------
+  formulario_frontend:
+    image: ${FRONTEND_IMAGE:-aryalvesfernandes/formulario:frontend-1.0.0}
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    networks:
+      network_swarm_public:
+        aliases:
+          - formulario_frontend
+    environment:
+      - TZ=America/Sao_Paulo
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      labels:
+        # Habilita o Traefik para o Frontend
+        - traefik.enable=true
+        # Define as regras de roteamento do Traefik para o Frontend
+        - traefik.http.routers.formulario_frontend.rule=Host(`${FRONTEND_DOMAIN:-formulario.seudominio.com}`)
+        # Define o entrypoint seguro com SSL
+        - traefik.http.routers.formulario_frontend.entrypoints=websecure
+        # Certificado SSL Let's Encrypt
+        - traefik.http.routers.formulario_frontend.tls.certresolver=letsencryptresolver
+        # Define o serviço do Traefik
+        - traefik.http.routers.formulario_frontend.service=formulario_frontend
+        # Porta interna do Nginx
+        - traefik.http.services.formulario_frontend.loadbalancer.server.port=80
+        - traefik.http.services.formulario_frontend.loadbalancer.passHostHeader=true
+
+# ==============================================================================
+# Definição Global dos Volumes do Formulário
+# ==============================================================================
+volumes:
+  # Volume para backups locais persistentes do PostgreSQL
+  formulario_backups_local:
+    external: false
+    name: formulario_backups_local
+
+# ==============================================================================
+# Definição Global das Redes Swarm (Apenas a rede solicitada)
+# ==============================================================================
+networks:
+  network_swarm_public:
+    external: true
+    name: network_swarm_public
