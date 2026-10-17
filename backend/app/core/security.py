@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from argon2 import PasswordHasher, Type
 from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
-from jose import jwt
+import jwt
 from app.core.config import settings
 
 # Argon2id hasher com custo de memória configurado (padrão de memória 64MB = 65536 KiB, 3 iterações)

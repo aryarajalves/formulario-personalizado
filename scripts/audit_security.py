@@ -21,10 +21,9 @@ def run_backend_audit():
         "-m",
         "pip_audit",
         "-r",
-        "backend/requirements.txt",
-        "--ignore-vuln",
-        "PYSEC-2026-1325"
+        "backend/requirements.txt"
     ]
+
     
     res = subprocess.run(cmd, env=env)
     if res.returncode != 0:
