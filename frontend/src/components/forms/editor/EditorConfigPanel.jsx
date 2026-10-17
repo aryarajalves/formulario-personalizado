@@ -1,6 +1,7 @@
 import React from 'react';
 import { RefreshCw, ChevronDown } from 'lucide-react';
 import { QUESTION_TYPES } from '../QuestionTypePickerModal';
+import LogicJumpConfig from './LogicJumpConfig';
 
 export default function EditorConfigPanel({
   activeItemType,
@@ -157,6 +158,14 @@ export default function EditorConfigPanel({
                 placeholder="Ex: Digite seu telefone..."
               />
             </div>
+
+            <LogicJumpConfig
+              currentQuestion={currentQuestion}
+              allQuestions={form?.questions || []}
+              onUpdateLogicJump={(newLogic) => {
+                handleUpdateCurrentQuestion('logic_jump', newLogic, true);
+              }}
+            />
           </>
         )}
       </div>

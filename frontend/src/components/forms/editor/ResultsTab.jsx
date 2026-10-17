@@ -12,8 +12,10 @@ import {
   CheckCircle2, 
   Clock, 
   Download,
-  Filter
+  Filter,
+  Printer
 } from 'lucide-react';
+import { printLeadPdf } from '../../../utils/pdfExport';
 
 export default function ResultsTab({
   formId,
@@ -73,6 +75,10 @@ export default function ResultsTab({
     } finally {
       setExporting(false);
     }
+  };
+
+  const handlePrintPdf = () => {
+    printLeadPdf(selectedResponse, formSlug, formatDate);
   };
 
   return (
@@ -402,6 +408,15 @@ export default function ResultsTab({
             </div>
 
             <div className="response-modal-footer">
+              <button
+                type="button"
+                className="response-modal-print-btn"
+                onClick={handlePrintPdf}
+                data-testid="print-lead-pdf-btn"
+                title="Salvar ou Imprimir em PDF"
+              >
+                <Printer size={15} /> Imprimir / Salvar PDF
+              </button>
               <button
                 type="button"
                 className="response-modal-primary-close-btn"

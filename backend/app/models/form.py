@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Boolean, Index
 from datetime import datetime, timezone
 from app.core.database import Base
 
@@ -41,4 +41,29 @@ class FormResponseData(Base):
     answers = Column(JSON, default=list, nullable=False)
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    __table_args__ = (
+        Index("idx_form_responses_form_status", "form_id", "status"),
+        Index("idx_form_responses_form_created", "form_id", "created_at"),
+    )
+
+
+class WebhookDeliveryLog(Base):
+    __tablename__ = "webhook_delivery_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    form_id = Column(Integer, ForeignKey("forms.id", ondelete="CASCADE"), nullable=False, index=True)
+    response_id = Column(Integer, ForeignKey("form_responses.id", ondelete="SET NULL"), nullable=True, index=True)
+    webhook_url = Column(String, nullable=False)
+    status_code = Column(Integer, nullable=True)
+    success = Column(Boolean, default=False, nullable=False)
+    error_message = Column(String, nullable=True)
+    duration_ms = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+    __table_args__ = (
+        Index("idx_webhook_logs_form_created", "form_id", "created_at"),
+    )
+
+
 

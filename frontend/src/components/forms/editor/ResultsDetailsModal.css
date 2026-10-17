@@ -213,6 +213,29 @@
   background: #f8fafc;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.response-modal-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.response-modal-print-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0284c7;
 }
 
 .response-modal-primary-close-btn {
@@ -230,3 +253,4 @@
 .response-modal-primary-close-btn:hover {
   background: #1e293b;
 }
+

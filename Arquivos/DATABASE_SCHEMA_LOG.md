@@ -60,6 +60,23 @@ Registro de migrações e atualizações estruturais do banco de dados (PostgreS
   - `forms`: Adicionada coluna `theme` (JSON DEFAULT '{}').
 - **Script de Migração:** `backend/scripts/add_theme_column.py`
 
+---
+
+### [17/10/2026] - Otimização de Escalabilidade e Índices de Alta Performance
+- **Tabelas Afetadas:**
+  - `form_responses`: Criação de índices compostos `idx_form_responses_form_status (form_id, status)` e `idx_form_responses_form_created (form_id, created_at)`.
+- **Script de Migração:** `backend/scripts/add_performance_indexes.py`
+
+---
+
+### [17/10/2026] - Histórico e Auditoria de Disparos de Webhook
+- **Tabelas Criadas:**
+  - `webhook_delivery_logs`: Armazenamento de logs de envio de webhook (`id`, `form_id`, `response_id`, `webhook_url`, `status_code`, `success`, `error_message`, `duration_ms`, `created_at`).
+  - Criação do índice `idx_webhook_logs_form_created (form_id, created_at)`.
+- **Script de Migração:** `backend/scripts/create_webhook_logs_table.py`
+
+
+
 
 
 

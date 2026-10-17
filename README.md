@@ -32,11 +32,22 @@ A solução oferece uma experiência intuitiva no estilo *Typeform* com transiç
 - **Timestamps em Horário de Brasília (America/Sao_Paulo):** Exibição cronológica ajustada no fuso local (UTC-3).
 
 ### 🔗 Integrações & Automação
-- **Webhooks Customizados:** Disparo de payloads HTTP JSON automáticos a cada preenchimento (parcial ou finalizado) para CRMs, n8n, Make ou Webhooks próprios.
-- **Google Calendar Sync:** Sincronização direta de horários agendados pelo formulário com a agenda do Google.
+- **Webhooks Customizados com Logs de Auditoria:** Disparo de payloads HTTP JSON automáticos com histórico de disparos, medição de latência em milissegundos, status HTTP e botão de teste manual.
+- **Google Calendar Sync com Criptografia em Repouso:** Sincronização direta de horários agendados com tokens OAuth criptografados via Fernet (AES-128-CBC + HMAC-SHA256).
+- **Lógica Condicional (Saltos Lógicos / Branching):** Redirecionamento dinâmico e inteligente entre perguntas ou finalização com base nas respostas selecionadas pelo participante.
+
+### 📊 Painel de Resultados & Análise (Analytics)
+- **Métricas em Tempo Real de Alta Performance:** Total de respostas, respostas completas vs. parciais, taxa de conclusão e visualizações calculadas via query agregada otimizada.
+- **Filtros Avançados:** Filtragem rápida por status (`Todos`, `Finalizados`, `Parciais`) e busca textual por dados do lead.
+- **Visualização Detalhada em Modal:** Modal dinâmico para inspecionar respostas completas de cada participante individualmente.
+- **Exportação de Dados:** Exportação individual em **PDF** formatado para impressão/arquivamento e exportação global em **CSV** e **JSON**.
+- **Timestamps em Horário de Brasília (America/Sao_Paulo):** Exibição cronológica ajustada no fuso local (UTC-3).
 
 ### 🛡️ Administração, Segurança & Infraestrutura
+- **Segurança Reforçada (Anti-SSRF & Rate Limiting):** Bloqueio de IP spoofing/DNS rebinding em requisições de webhook e limitação granular de taxa de requisições por IP.
+- **Alta Escalabilidade & Performance:** Otimização de pool de conexões PostgreSQL (`pool_size=20`, `max_overflow=30`, `pool_recycle=300`) e índices compostos de busca rápida.
 - **Autenticação Segura JWT (Argon2id + Pepper):** Proteção criptográfica moderna com perfis de acesso (Superadmin, Admin e Usuário).
+- **Tratamento Global de Exceções:** Handlers centralizados de erro JSON padronizados, prevenindo vazamento de stack traces e falhas na interface.
 - **Gestão de Convites & Usuários:** Links de convite com expiração automática e recuperação de acesso.
 - **Backups Automáticos & Manuais em Nuvem:**
   - Snapshots compactados (`.dump.gz`) salvos localmente ou em provedores compatíveis com S3 (AWS S3 / Backblaze B2);

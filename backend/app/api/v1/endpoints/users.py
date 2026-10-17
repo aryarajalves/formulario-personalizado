@@ -13,6 +13,8 @@ from app.core.security import (
 )
 from app.models.user import User, Invite, PasswordResetToken, RegistrationVerification
 from app.services.email import send_verification_email
+from app.core.rate_limiter import rate_limiter, check_rate_limit, get_client_ip
+from fastapi import Request
 from app.schemas.user import (
     UserLogin,
     Token,
@@ -34,9 +36,19 @@ from app.schemas.user import (
 router = APIRouter(prefix="/auth", tags=["Auth & Users"])
 
 def get_current_user(
+    request: Request,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ) -> User:
+    # Rate limit para rotas autenticadas (padrão: 200 req/min por IP)
+    client_ip = get_client_ip(request)
+    check_rate_limit(
+        key_prefix="auth_users",
+        max_requests=settings.RATE_LIMIT_AUTHENTICATED,
+        window_seconds=60,
+        identifier=client_ip
+    )
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -74,7 +86,11 @@ def require_superadmin(current_user: User = Depends(get_current_user)) -> User:
         )
     return current_user
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    dependencies=[Depends(rate_limiter(max_requests=settings.RATE_LIMIT_LOGIN, key_prefix="login"))]
+)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
     if not user or not verify_password(login_data.password, user.hashed_password):
@@ -396,7 +412,12 @@ def validate_invite(token: str, db: Session = Depends(get_db)):
 
     return InviteValidateResponse(valid=True, role=invite.role)
 
-@router.post("/register", response_model=RegisterInitiateResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/register",
+    response_model=RegisterInitiateResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(rate_limiter(max_requests=settings.RATE_LIMIT_REGISTER, key_prefix="register"))]
+)
 async def register_user(
     data: RegisterWithInvite,
     db: Session = Depends(get_db)
@@ -464,7 +485,12 @@ async def register_user(
         requires_verification=True
     )
 
-@router.post("/register/verify", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register/verify",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limiter(max_requests=settings.RATE_LIMIT_VERIFY_OTP, key_prefix="verify_otp"))]
+)
 def verify_registration(
     data: VerifyCodeRequest,
     db: Session = Depends(get_db)
@@ -519,7 +545,10 @@ def verify_registration(
 
     return new_user
 
-@router.post("/register/resend-code")
+@router.post(
+    "/register/resend-code",
+    dependencies=[Depends(rate_limiter(max_requests=settings.RATE_LIMIT_REGISTER, key_prefix="resend_otp"))]
+)
 async def resend_registration_code(
     data: ResendCodeRequest,
     db: Session = Depends(get_db)

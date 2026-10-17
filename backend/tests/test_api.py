@@ -1,3 +1,4 @@
+import unittest.mock
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,6 +9,7 @@ from app.main import app, init_superadmin
 from app.core.database import Base, get_db
 from app.core.config import settings
 from app.core.security import get_password_hash
+from app.core.rate_limiter import reset_rate_limits
 from app.models.user import User, Invite, RegistrationVerification
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -43,7 +45,10 @@ def setup_database():
     db.add(superadmin)
     db.commit()
     db.close()
+    from app.core.rate_limiter import reset_rate_limits
+    reset_rate_limits()
     yield
+    reset_rate_limits()
     Base.metadata.drop_all(bind=engine)
 
 client = TestClient(app)
@@ -158,6 +163,7 @@ def test_create_invite_and_register_user():
     assert new_user["role"] == "admin"
 
     # 6. Tentar usar o mesmo convite novamente (deve falhar pois já foi usado)
+    reset_rate_limits()
     reuse_invite = client.post("/api/v1/auth/register", json={
         "token": invite_token,
         "name": "Outro Admin",
@@ -615,15 +621,25 @@ def test_forms_endpoints_crud_flow():
     assert pub_data["slug"] == form_data["slug"]
     assert pub_data["title"] == "Pesquisa de Satisfação Atualizada"
 
-    # 7.1 Envio de resposta pública
-    submit_res = client.post(f"/api/v1/forms/public/{form_data['slug']}/submit", json={
-        "answers": [
-            {"question_title": "Qual é o seu nome completo?", "answer": "Carlos Eduardo"},
-            {"question_title": "Qual seu email?", "answer": "carlos@teste.com"}
-        ]
-    })
-    assert submit_res.status_code == 200
-    assert submit_res.json()["success"] is True
+    # 7.1 Envio de resposta pública (com webhook em background)
+    # Reconfigura webhook_url no formulário para testar o disparo em background
+    client.put(f"/api/v1/forms/{form_id}", json={"webhook_url": "https://webhook.site/teste-background"}, headers=headers)
+    with unittest.mock.patch("app.api.v1.endpoints.forms.dispatch_webhook_in_background") as mock_bg_webhook:
+        submit_res = client.post(f"/api/v1/forms/public/{form_data['slug']}/submit", json={
+            "answers": [
+                {"question_title": "Qual é o seu nome completo?", "answer": "Carlos Eduardo"},
+                {"question_title": "Qual seu email?", "answer": "carlos@teste.com"}
+            ]
+        })
+        assert submit_res.status_code == 200
+        assert submit_res.json()["success"] is True
+        # Valida que o FastAPI executou o background task com a URL e o payload corretos
+        assert mock_bg_webhook.called
+        call_args = mock_bg_webhook.call_args[0]
+        assert call_args[0] == form_id
+        assert call_args[1] == "https://webhook.site/teste-background"
+        assert call_args[2]["form_slug"] == form_data["slug"]
+
 
     # 7.2 Testar salvamento parcial (auto-save na 1ª pergunta)
     form_slug = form_data["slug"]
@@ -697,6 +713,300 @@ def test_forms_endpoints_crud_flow():
     # 9. Validar que foi removido
     list_after = client.get("/api/v1/forms", headers=headers)
     assert not any(f["id"] == form_id for f in list_after.json())
+
+
+def test_rate_limiting_protections():
+    """Testa se os limites de requisição por IP bloqueiam abusos e retornam 429."""
+    from app.core.rate_limiter import reset_rate_limits
+    reset_rate_limits()
+
+    # 1. Testar rate limit no login (limite: 5 req/min)
+    # Executa 5 tentativas de login
+    for i in range(5):
+        res = client.post("/api/v1/auth/login", json={
+            "email": "wrong@example.com",
+            "password": "WrongPassword123!"
+        })
+        assert res.status_code == 401
+
+    # A 6ª tentativa dentro do mesmo minuto DEVE ser bloqueada com 429
+    blocked_login = client.post("/api/v1/auth/login", json={
+        "email": "wrong@example.com",
+        "password": "WrongPassword123!"
+    })
+    assert blocked_login.status_code == 429
+    assert "Muitas requisições" in blocked_login.json()["detail"]
+    assert "Retry-After" in blocked_login.headers
+
+    # 2. Testar rate limit no formulário público submit (limite: 30 req/min)
+    reset_rate_limits()
+    # Executa 30 submissões
+    for i in range(30):
+        client.post("/api/v1/forms/public/inexistent-slug/submit", json={"answers": []})
+
+    # A 31ª requisição DEVE ser bloqueada com 429
+    blocked_submit = client.post("/api/v1/forms/public/inexistent-slug/submit", json={"answers": []})
+    assert blocked_submit.status_code == 429
+    assert "Muitas requisições" in blocked_submit.json()["detail"]
+
+    reset_rate_limits()
+
+
+def test_cors_origins_configuration():
+    """Valida o funcionamento granular do CORS para origens permitidas vs não permitidas."""
+    # 1. Testa preflight OPTIONS com origem permitida
+    allowed_origin = "http://localhost:3002"
+    res_allowed = client.options(
+        "/api/v1/health",
+        headers={
+            "Origin": allowed_origin,
+            "Access-Control-Request-Method": "GET"
+        }
+    )
+    assert res_allowed.headers.get("access-control-allow-origin") == allowed_origin
+
+    # 2. Testa preflight OPTIONS com origem não permitida
+    disallowed_origin = "https://hacker-malicioso.com"
+    res_disallowed = client.options(
+        "/api/v1/health",
+        headers={
+            "Origin": disallowed_origin,
+            "Access-Control-Request-Method": "GET"
+        }
+    )
+    # Origens não permitidas NÃO devem receber o cabeçalho access-control-allow-origin
+    assert res_disallowed.headers.get("access-control-allow-origin") != disallowed_origin
+
+    # 3. Testa propriedade cors_origins_list do settings
+    assert isinstance(settings.cors_origins_list, list)
+    assert "http://localhost:3002" in settings.cors_origins_list
+
+
+def test_encryption_module_and_oauth_tokens_at_rest():
+    """Valida a criptografia simétrica (Fernet) de tokens OAuth do Google no banco de dados."""
+    from app.core.encryption import encrypt_token, decrypt_token
+    from app.models.form import Form
+    from app.services import google_calendar
+
+    # 1. Testar ciclo de encrypt / decrypt direto
+    raw_token = "ya29.a0AfH6SMD_ExemploTokenGoogleSuperSecreto12345"
+    encrypted = encrypt_token(raw_token)
+    assert encrypted is not None
+    assert encrypted.startswith("enc:")
+    assert encrypted != raw_token
+
+    # Descriptografar de volta
+    decrypted = decrypt_token(encrypted)
+    assert decrypted == raw_token
+
+    # Idempotência (não criptografa duas vezes se já estiver com 'enc:')
+    double_encrypt = encrypt_token(encrypted)
+    assert double_encrypt == encrypted
+
+    # Retrocompatibilidade com tokens legados em texto puro
+    legacy_token = "token_antigo_sem_prefixo"
+    assert decrypt_token(legacy_token) == legacy_token
+    assert decrypt_token(None) is None
+
+    # 2. Testar gravação de tokens criptografados na tabela de formulários
+    db = TestingSessionLocal()
+    sa = db.query(User).filter(User.role == "superadmin").first()
+    form = Form(
+        title="Formulário com Google Agenda Criptografado",
+        slug="form-cripto-test",
+        user_id=sa.id,
+        google_calendar_connected=True,
+        google_calendar_email="agenda@gmail.com",
+        google_calendar_access_token=encrypt_token("access-token-secreto"),
+        google_calendar_refresh_token=encrypt_token("refresh-token-secreto")
+    )
+    db.add(form)
+    db.commit()
+    db.refresh(form)
+
+    # Valida que no banco de dados está salvo com ciphertext seguro
+    assert form.google_calendar_access_token.startswith("enc:")
+    assert form.google_calendar_refresh_token.startswith("enc:")
+    assert "access-token-secreto" not in form.google_calendar_access_token
+    assert "refresh-token-secreto" not in form.google_calendar_refresh_token
+
+    # Valida que a rotina do serviço consegue recuperar os valores originais para a API
+    assert decrypt_token(form.google_calendar_access_token) == "access-token-secreto"
+    assert decrypt_token(form.google_calendar_refresh_token) == "refresh-token-secreto"
+    db.close()
+
+
+def test_ssrf_protection_dev_vs_prod():
+    """Valida o bloqueio dinâmico contra SSRF (Server-Side Request Forgery) em Dev vs Prod."""
+    from app.core.ssrf import is_ssrf_safe_url
+
+    # 1. Em desenvolvimento (allow_local=True)
+    # Permite localhost para testes do desenvolvedor
+    safe, reason = is_ssrf_safe_url("http://localhost:3000/webhook", allow_local=True)
+    assert safe is True
+
+    safe_127, _ = is_ssrf_safe_url("http://127.0.0.1:8000/hook", allow_local=True)
+    assert safe_127 is True
+
+    # Bloqueia esquemas perigosos (ex: file://, ftp://, gopher://)
+    file_safe, _ = is_ssrf_safe_url("file:///etc/passwd", allow_local=True)
+    assert file_safe is False
+
+    # 2. Em produção (allow_local=False)
+    # Bloqueia estritamente localhost
+    prod_local_safe, reason = is_ssrf_safe_url("http://localhost:3000/webhook", allow_local=False)
+    assert prod_local_safe is False
+    assert "produção" in reason
+
+    # Bloqueia 127.0.0.1
+    prod_127_safe, _ = is_ssrf_safe_url("http://127.0.0.1:5432/hook", allow_local=False)
+    assert prod_127_safe is False
+
+    # Bloqueia IP de metadados da Nuvem (AWS / GCP / DigitalOcean)
+    meta_safe, reason_meta = is_ssrf_safe_url("http://169.254.169.254/latest/meta-data/", allow_local=False)
+    assert meta_safe is False
+    assert "metadados" in reason_meta
+
+    # Bloqueia IPs de rede interna privada (10.x.x.x, 192.168.x.x)
+    private_safe, reason_priv = is_ssrf_safe_url("http://192.168.1.100:8080/webhook", allow_local=False)
+    assert private_safe is False
+    assert "privada" in reason_priv
+
+    # URLs públicas legítimas devem ser aceitas normalmente
+    public_safe, _ = is_ssrf_safe_url("https://webhook.site/uuid-123", allow_local=False)
+    assert public_safe is True
+
+    # 3. Teste via API: Tentar salvar webhook com IP de metadados deve retornar HTTP 400
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": settings.SUPERADMIN_EMAIL,
+        "password": settings.SUPERADMIN_PASSWORD
+    })
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_res = client.post("/api/v1/forms", json={"title": "Form Teste SSRF"}, headers=headers)
+    form_id = create_res.json()["id"]
+
+    # Tentativa de injetar URL maliciosa de metadados da nuvem
+    ssrf_attack = client.put(f"/api/v1/forms/{form_id}", json={
+        "webhook_url": "http://169.254.169.254/latest/meta-data/"
+    }, headers=headers)
+    assert ssrf_attack.status_code == 400
+    assert "URL de Webhook inválida por segurança" in ssrf_attack.json()["detail"]
+
+    # Limpeza
+    client.delete(f"/api/v1/forms/{form_id}", headers=headers)
+
+
+def test_optimized_metrics_and_composite_indexes():
+    """Valida a performance da contagem única de métricas e suporte aos índices compostos de escalabilidade."""
+    from app.models.form import Form, FormResponseData
+    from app.core.rate_limiter import reset_rate_limits
+    reset_rate_limits()
+
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": settings.SUPERADMIN_EMAIL,
+        "password": settings.SUPERADMIN_PASSWORD
+    })
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Cria formulário de teste
+    form_res = client.post("/api/v1/forms", json={"title": "Form Escala Teste"}, headers=headers)
+    form_id = form_res.json()["id"]
+    slug = form_res.json()["slug"]
+
+    # 1. Envia resposta parcial
+    p_res = client.post(f"/api/v1/forms/public/{slug}/save-partial", json={
+        "current_step": 1,
+        "answers": [{"question_title": "Qual seu nome?", "answer": "Lead Escala"}]
+    })
+    assert p_res.status_code == 200
+
+    # 2. Envia resposta concluída com recálculo agregado otimizado
+    sub_res = client.post(f"/api/v1/forms/public/{slug}/submit", json={
+        "answers": [{"question_title": "Qual seu nome?", "answer": "Cliente Finalizado"}]
+    })
+    assert sub_res.status_code == 200
+    assert sub_res.json()["success"] is True
+
+    # 3. Valida se o completion_rate foi recalculado perfeitamente
+    db = TestingSessionLocal()
+    updated_form = db.query(Form).filter(Form.id == form_id).first()
+    assert updated_form.responses_count >= 1
+    assert updated_form.completion_rate > 0.0
+    db.close()
+
+    # Limpeza
+    client.delete(f"/api/v1/forms/{form_id}", headers=headers)
+
+
+def test_webhook_delivery_logs_history_and_test_dispatch(monkeypatch):
+    """Valida o registro de auditoria na tabela webhook_delivery_logs e a rota de teste de webhook."""
+    reset_rate_limits()
+
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": settings.SUPERADMIN_EMAIL,
+        "password": settings.SUPERADMIN_PASSWORD
+    })
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Cria formulário e configura webhook_url
+    form_res = client.post("/api/v1/forms", json={"title": "Form Webhook History Test"}, headers=headers)
+    assert form_res.status_code == 201
+    form_id = form_res.json()["id"]
+
+    client.put(f"/api/v1/forms/{form_id}", json={
+        "webhook_url": "https://webhook.site/audit-history-test"
+    }, headers=headers)
+
+    # 2. Testa a rota de disparo de teste com mock
+    mock_post_webhook = unittest.mock.MagicMock()
+    mock_post_webhook.status_code = 200
+    mock_post_webhook.text = '{"status": "ok"}'
+
+    class MockClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def post(self, url, **kwargs):
+            return mock_post_webhook
+
+    import httpx
+    monkeypatch.setattr(httpx, "Client", MockClient)
+
+    test_res = client.post(
+        f"/api/v1/forms/{form_id}/test-webhook",
+        headers=headers
+    )
+    assert test_res.status_code == 200
+    data = test_res.json()
+    assert data["success"] is True
+    assert data["status_code"] == 200
+    assert "duration_ms" in data
+
+    # 3. Consulta os logs de webhook
+    logs_res = client.get(f"/api/v1/forms/{form_id}/webhook/logs", headers=headers)
+    assert logs_res.status_code == 200
+    logs_data = logs_res.json()
+    assert logs_data["total"] >= 1
+    item = logs_data["logs"][0]
+    assert item["webhook_url"] == "https://webhook.site/audit-history-test"
+    assert item["status_code"] == 200
+    assert item["success"] is True
+
+    # 4. Limpeza
+    client.delete(f"/api/v1/forms/{form_id}", headers=headers)
+
+
+
+
+
+
 
 
 

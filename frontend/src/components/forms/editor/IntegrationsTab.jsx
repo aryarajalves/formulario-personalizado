@@ -1,7 +1,9 @@
 import React from 'react';
 import { ExternalLink, Calendar, Loader2 } from 'lucide-react';
+import WebhookLogsSection from './WebhookLogsSection';
 
 export default function IntegrationsTab({
+  formId,
   webhookUrl,
   setWebhookUrl,
   saving,
@@ -96,6 +98,9 @@ export default function IntegrationsTab({
                 )}
               </button>
             </div>
+
+            {/* Histórico e Auditoria de Disparos de Webhook */}
+            <WebhookLogsSection formId={formId} webhookUrl={webhookUrl} />
           </div>
         </div>
 

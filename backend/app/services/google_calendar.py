@@ -57,15 +57,18 @@ def get_user_email_from_token(access_token: str) -> str:
             return resp.json().get("email", "")
         return ""
 
+from app.core.encryption import encrypt_token, decrypt_token
+
 def refresh_google_access_token(form: Form, db: Session) -> str:
-    """Atualiza o access_token utilizando o refresh_token salvo."""
-    if not form.google_calendar_refresh_token:
-        raise ValueError("Refresh token não disponível.")
+    """Atualiza o access_token utilizando o refresh_token salvo (descriptografa antes do envio)."""
+    raw_refresh_token = decrypt_token(form.google_calendar_refresh_token)
+    if not raw_refresh_token:
+        raise ValueError("Refresh token não disponível ou não pôde ser descriptografado.")
     
     data = {
         "client_id": settings.GOOGLE_CLIENT_ID,
         "client_secret": settings.GOOGLE_CLIENT_SECRET,
-        "refresh_token": form.google_calendar_refresh_token,
+        "refresh_token": raw_refresh_token,
         "grant_type": "refresh_token"
     }
     with httpx.Client(timeout=10.0) as client:
@@ -76,7 +79,8 @@ def refresh_google_access_token(form: Form, db: Session) -> str:
         
         token_data = resp.json()
         new_token = token_data.get("access_token")
-        form.google_calendar_access_token = new_token
+        # Salva o novo access_token criptografado no banco
+        form.google_calendar_access_token = encrypt_token(new_token)
         db.commit()
         return new_token
 

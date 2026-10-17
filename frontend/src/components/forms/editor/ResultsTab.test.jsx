@@ -220,5 +220,50 @@ describe('ResultsTab Component', () => {
       );
     });
   });
+
+  it('triggers PDF print when clicking "Imprimir / Salvar PDF" in the detailed modal', () => {
+    const mockPrint = vi.fn();
+    const mockWrite = vi.fn();
+    const mockClose = vi.fn();
+    const mockFocus = vi.fn();
+
+    window.open = vi.fn().mockReturnValue({
+      document: {
+        write: mockWrite,
+        close: mockClose
+      },
+      focus: mockFocus,
+      print: mockPrint
+    });
+
+    render(
+      <ResultsTab
+        formId={1}
+        formSlug="meu-formulario"
+        responses={mockResponses}
+        responsesPage={1}
+        responsesTotal={2}
+        responsesTotalPages={1}
+        loadingResponses={false}
+        setResponsesPage={vi.fn()}
+        onGoToShare={vi.fn()}
+      />
+    );
+
+    // Abre o modal
+    fireEvent.click(screen.getByTestId('view-more-btn-0'));
+    expect(screen.getByTestId('response-details-modal')).toBeDefined();
+
+    // Botão de PDF
+    const printBtn = screen.getByTestId('print-lead-pdf-btn');
+    expect(printBtn).toBeDefined();
+
+    fireEvent.click(printBtn);
+
+    expect(window.open).toHaveBeenCalledWith('', '_blank', 'width=800,height=900');
+    expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining('Relatório do Lead - Aryaraj Fernandes'));
+    expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining('aryaraj@gmail.com'));
+    expect(mockClose).toHaveBeenCalled();
+  });
 });
 

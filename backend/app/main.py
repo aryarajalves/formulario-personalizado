@@ -47,11 +47,13 @@ def init_superadmin():
 async def lifespan(app: FastAPI):
     # Create tables
     Base.metadata.create_all(bind=engine)
-    # Ensure columns exist on already created tables
+    # Ensure columns and performance indexes exist on already created tables
     with engine.connect() as conn:
         from sqlalchemy import text
         try:
             conn.execute(text("ALTER TABLE invites ADD COLUMN IF NOT EXISTS used_by_email VARCHAR;"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_form_responses_form_status ON form_responses (form_id, status);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_form_responses_form_created ON form_responses (form_id, created_at);"))
             conn.commit()
         except Exception:
             pass
@@ -72,13 +74,25 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from app.core.logger import logger
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Erro inesperado em {request.method} {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno do servidor. Tente novamente mais tarde."}
+    )
 
 @app.get("/health")
 def health_check():

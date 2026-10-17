@@ -172,6 +172,7 @@ export default function FormEditor({ formId, onBack }) {
       {/* Renderização Condicional de Acordo com a Aba Selecionada */}
       {editorTab === 'integrar' ? (
         <IntegrationsTab
+          formId={formId}
           webhookUrl={webhookUrl}
           setWebhookUrl={setWebhookUrl}
           saving={saving}

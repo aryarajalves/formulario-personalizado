@@ -2,17 +2,24 @@ import secrets
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from fastapi.responses import RedirectResponse, Response
+
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
+import time
+from app.core import database
 from app.core.database import get_db
 from app.api.v1.endpoints.users import get_current_user
 from app.models.user import User
-from app.models.form import Form, FormResponseData
+from app.models.form import Form, FormResponseData, WebhookDeliveryLog
 from app.schemas.form import FormCreate, FormResponse, FormUpdate
 from app.core.logger import logger
 from app.core.config import settings
+from app.core.rate_limiter import rate_limiter
+from app.core.encryption import encrypt_token, decrypt_token
+from app.core.ssrf import is_ssrf_safe_url
 from app.services import google_calendar
 
 router = APIRouter(prefix="/forms", tags=["forms"])
@@ -118,9 +125,14 @@ def update_form(
         form.theme = form_in.theme
 
     if form_in.webhook_url is not None:
-        form.webhook_url = form_in.webhook_url.strip() or None
-
-
+        clean_url = form_in.webhook_url.strip()
+        if clean_url:
+            is_safe, reason = is_ssrf_safe_url(clean_url)
+            if not is_safe:
+                raise HTTPException(status_code=400, detail=f"URL de Webhook inválida por segurança: {reason}")
+            form.webhook_url = clean_url
+        else:
+            form.webhook_url = None
 
     if form_in.google_calendar_connected is not None:
         form.google_calendar_connected = form_in.google_calendar_connected
@@ -134,12 +146,12 @@ def update_form(
     return form
 
 @router.post("/{form_id}/test-webhook")
-def test_form_webhook(
+def execute_test_webhook(
     form_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Envia uma carga de teste para a URL de webhook cadastrada no formulário."""
+    """Envia uma carga de teste para a URL de webhook cadastrada no formulário e registra no histórico de auditoria."""
     import httpx
     form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
     if not form:
@@ -147,6 +159,11 @@ def test_form_webhook(
     
     if not form.webhook_url:
         raise HTTPException(status_code=400, detail="Nenhuma URL de webhook configurada para este formulário.")
+
+    # Validação rigorosa Anti-SSRF antes do disparo
+    is_safe, reason = is_ssrf_safe_url(form.webhook_url)
+    if not is_safe:
+        raise HTTPException(status_code=400, detail=f"URL de Webhook bloqueada por segurança: {reason}")
 
     payload = {
         "event": "form_submission",
@@ -162,18 +179,47 @@ def test_form_webhook(
         "created_at": form.created_at.isoformat() if form.created_at else ""
     }
 
+    start_time = time.time()
+    status_code = None
+    success = False
+    error_message = None
+
     try:
         with httpx.Client(timeout=10.0) as client:
             resp = client.post(form.webhook_url, json=payload)
+            status_code = resp.status_code
+            success = (200 <= resp.status_code < 300)
+            if not success:
+                error_message = f"HTTP {resp.status_code}: {resp.text[:150]}"
             logger.info(f"Webhook disparado para {form.webhook_url}: Status {resp.status_code}")
-            return {
-                "success": True,
-                "status_code": resp.status_code,
-                "message": f"Webhook disparado com sucesso! Resposta da plataforma: {resp.status_code}"
-            }
     except Exception as e:
+        error_message = str(e)
         logger.error(f"Falha ao disparar webhook para {form.webhook_url}: {e}")
-        raise HTTPException(status_code=502, detail=f"Erro ao conectar ao webhook: {str(e)}")
+
+    duration_ms = int((time.time() - start_time) * 1000)
+
+    # Registra no log de auditoria
+    log_entry = WebhookDeliveryLog(
+        form_id=form.id,
+        response_id=None,
+        webhook_url=form.webhook_url,
+        status_code=status_code,
+        success=success,
+        error_message=error_message,
+        duration_ms=duration_ms
+    )
+    db.add(log_entry)
+    db.commit()
+
+    if not success:
+        raise HTTPException(status_code=502, detail=f"Erro ao conectar ao webhook: {error_message or 'Falha'}")
+
+    return {
+        "success": True,
+        "status_code": status_code,
+        "duration_ms": duration_ms,
+        "message": f"Webhook disparado com sucesso! Resposta da plataforma: {status_code}"
+    }
 
 @router.get("/{form_id}/integrations/google-calendar/auth-url")
 def get_google_calendar_auth_url(
@@ -221,9 +267,9 @@ def google_calendar_callback(
         
         form.google_calendar_connected = True
         form.google_calendar_email = user_email or form.google_calendar_email or "Conta Conectada"
-        form.google_calendar_access_token = access_token
+        form.google_calendar_access_token = encrypt_token(access_token)
         if refresh_token:
-            form.google_calendar_refresh_token = refresh_token
+            form.google_calendar_refresh_token = encrypt_token(refresh_token)
         
         db.commit()
         db.refresh(form)
@@ -291,7 +337,10 @@ def get_public_form(slug: str, db: Session = Depends(get_db)):
 
 
 
-@router.post("/public/{slug}/save-partial")
+@router.post(
+    "/public/{slug}/save-partial",
+    dependencies=[Depends(rate_limiter(max_requests=settings.RATE_LIMIT_PUBLIC_FORMS, key_prefix="public_forms"))]
+)
 def save_partial_form(slug: str, payload: dict, db: Session = Depends(get_db)):
     """Salva ou atualiza uma resposta em andamento (lead capture/auto-save desde a primeira pergunta)."""
     form = db.query(Form).filter(Form.slug == slug).first()
@@ -364,10 +413,63 @@ def save_partial_form(slug: str, payload: dict, db: Session = Depends(get_db)):
     return {"success": True, "response_id": response_record.id, "status": response_record.status}
 
 
-@router.post("/public/{slug}/submit")
-def submit_public_form(slug: str, answers_payload: dict, db: Session = Depends(get_db)):
-    """Recebe as respostas finais do usuário, marca como CONCLUIDO 100% e dispara webhook."""
+def dispatch_webhook_in_background(form_id: int, webhook_url: str, payload: dict, form_slug: str, response_id: int = None):
+    """Executa o envio do webhook de forma assíncrona em background e persiste o log de auditoria no banco."""
     import httpx
+    start_time = time.time()
+    status_code = None
+    success = False
+    error_message = None
+
+    # Valida novamente no background por defesa em profundidade
+    is_safe, reason = is_ssrf_safe_url(webhook_url)
+    if not is_safe:
+        error_message = f"Bloqueado por segurança SSRF: {reason}"
+        logger.warning(f"[WEBHOOK BACKGROUND BLOQUEADO SSRF] {webhook_url} (Formulário: {form_slug}): {reason}")
+    else:
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                resp = client.post(webhook_url, json=payload)
+                status_code = resp.status_code
+                success = (200 <= resp.status_code < 300)
+                if not success:
+                    error_message = f"HTTP {resp.status_code}: {resp.text[:200]}"
+                logger.info(f"[WEBHOOK BACKGROUND] Webhook disparado para {webhook_url} (Formulário: {form_slug}) - Status: {resp.status_code}")
+        except Exception as e:
+            error_message = str(e)
+            logger.error(f"[WEBHOOK BACKGROUND] Falha ao disparar webhook para {webhook_url} (Formulário: {form_slug}): {e}")
+
+    duration_ms = int((time.time() - start_time) * 1000)
+
+    # Persiste log de entrega de webhook com sessão de banco isolada
+    try:
+        db = database.SessionLocal()
+        log_entry = WebhookDeliveryLog(
+            form_id=form_id,
+            response_id=response_id,
+            webhook_url=webhook_url,
+            status_code=status_code,
+            success=success,
+            error_message=error_message,
+            duration_ms=duration_ms
+        )
+        db.add(log_entry)
+        db.commit()
+        db.close()
+    except Exception as db_err:
+        logger.error(f"[WEBHOOK LOG DB ERROR] Erro ao persistir log de webhook: {db_err}")
+
+@router.post(
+    "/public/{slug}/submit",
+    dependencies=[Depends(rate_limiter(max_requests=settings.RATE_LIMIT_PUBLIC_FORMS, key_prefix="public_forms"))]
+)
+def submit_public_form(
+    slug: str, 
+    answers_payload: dict, 
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """Recebe as respostas finais do usuário, marca como CONCLUIDO 100% e agenda webhook em background."""
     form = db.query(Form).filter(Form.slug == slug).first()
     if not form:
         raise HTTPException(status_code=404, detail="Formulário não encontrado.")
@@ -426,41 +528,50 @@ def submit_public_form(slug: str, answers_payload: dict, db: Session = Depends(g
         db.add(response_record)
         form.responses_count = (form.responses_count or 0) + 1
 
-    # Atualiza métricas agregadas do formulário
-    total_resp = db.query(FormResponseData).filter(FormResponseData.form_id == form.id).count()
-    completed_resp = db.query(FormResponseData).filter(
-        FormResponseData.form_id == form.id,
-        FormResponseData.status == "CONCLUIDO"
-    ).count()
+    # Garante que as alterações pendentes estão visíveis na sessão para o cálculo agregado
+    db.flush()
+
+    # Otimização de alta performance: agregação única compatível com PostgreSQL e SQLite
+    stats = db.query(
+        func.count(FormResponseData.id).label("total"),
+        func.coalesce(func.sum(case((FormResponseData.status == "CONCLUIDO", 1), else_=0)), 0).label("completed")
+    ).filter(FormResponseData.form_id == form.id).first()
+
+    total_resp = stats.total if stats and stats.total is not None else 1
+    completed_resp = stats.completed if stats and stats.completed is not None else 0
     form.completion_rate = round((completed_resp / max(1, total_resp)) * 100.0, 1)
 
     db.commit()
     db.refresh(response_record)
 
-    # Disparo de Webhook em background/síncrono se houver URL
+    # Disparo de Webhook em background assíncrono via FastAPI BackgroundTasks
     if form.webhook_url:
-        try:
-            with httpx.Client(timeout=8.0) as client:
-                webhook_data = {
-                    "event": "form_submission",
-                    "form_id": form.id,
-                    "form_title": form.title,
-                    "form_slug": form.slug,
-                    "response_id": response_record.id,
-                    "contact_name": response_record.contact_name,
-                    "contact_email": response_record.contact_email,
-                    "contact_phone": response_record.contact_phone,
-                    "status": response_record.status,
-                    "completion_percent": response_record.completion_percent,
-                    "answers": answers,
-                    "submitted_at": datetime.utcnow().isoformat()
-                }
-                client.post(form.webhook_url, json=webhook_data)
-                logger.info(f"Webhook enviado para {form.webhook_url} do formulário {form.slug}")
-        except Exception as e:
-            logger.error(f"Erro ao disparar webhook para {form.webhook_url}: {e}")
+        webhook_data = {
+            "event": "form_submission",
+            "form_id": form.id,
+            "form_title": form.title,
+            "form_slug": form.slug,
+            "response_id": response_record.id,
+            "contact_name": response_record.contact_name,
+            "contact_email": response_record.contact_email,
+            "contact_phone": response_record.contact_phone,
+            "status": response_record.status,
+            "completion_percent": response_record.completion_percent,
+            "answers": answers,
+            "submitted_at": datetime.utcnow().isoformat()
+        }
+        background_tasks.add_task(
+            dispatch_webhook_in_background,
+            form.id,
+            form.webhook_url,
+            webhook_data,
+            form.slug,
+            response_record.id
+        )
+        logger.info(f"Webhook enfileirado em background para {form.webhook_url} (Formulário: {form.slug})")
 
     return {"success": True, "message": "Respostas enviadas com sucesso!", "id": response_record.id}
+
 
 @router.get("/{form_id}/responses")
 def get_form_responses(
@@ -614,6 +725,50 @@ def export_form_responses_csv(
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+
+@router.get("/{form_id}/webhook/logs")
+def get_webhook_delivery_logs(
+    form_id: int,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retorna os registros recentes de auditoria de disparos de webhook do formulário."""
+    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Formulário não encontrado.")
+
+    logs = (
+        db.query(WebhookDeliveryLog)
+        .filter(WebhookDeliveryLog.form_id == form_id)
+        .order_by(WebhookDeliveryLog.created_at.desc())
+        .limit(min(limit, 50))
+        .all()
+    )
+
+    result = []
+    for l in logs:
+        created_str = ""
+        if l.created_at:
+            dt_utc = l.created_at if l.created_at.tzinfo else l.created_at.replace(tzinfo=timezone.utc)
+            created_str = dt_utc.astimezone(BRASILIA_TZ).strftime("%d/%m/%Y %H:%M:%S")
+
+        result.append({
+            "id": l.id,
+            "form_id": l.form_id,
+            "response_id": l.response_id,
+            "webhook_url": l.webhook_url,
+            "status_code": l.status_code,
+            "success": l.success,
+            "error_message": l.error_message,
+            "duration_ms": l.duration_ms,
+            "created_at": created_str
+        })
+
+    return {"logs": result, "total": len(result)}
+
+
 
 
 

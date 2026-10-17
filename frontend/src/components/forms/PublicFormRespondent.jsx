@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Check, ArrowRight, Sparkles, Loader2, CheckCircle2, ChevronDown, AlertCircle, ExternalLink } from 'lucide-react';
 import './PublicFormRespondent.css';
-
-
-const COUNTRY_CODES = [
-  { code: '+55', flag: '🇧🇷', name: 'Brasil' },
-  { code: '+1', flag: '🇺🇸', name: 'Estados Unidos' },
-  { code: '+351', flag: '🇵🇹', name: 'Portugal' },
-  { code: '+34', flag: '🇪🇸', name: 'Espanha' },
-  { code: '+44', flag: '🇬🇧', name: 'Reino Unido' },
-  { code: '+54', flag: '🇦🇷', name: 'Argentina' },
-  { code: '+598', flag: '🇺🇾', name: 'Uruguai' },
-  { code: '+595', flag: '🇵🇾', name: 'Paraguai' },
-  { code: '+56', flag: '🇨🇱', name: 'Chile' },
-  { code: '+57', flag: '🇨🇴', name: 'Colômbia' },
-  { code: '+52', flag: '🇲🇽', name: 'México' },
-  { code: '+33', flag: '🇫🇷', name: 'França' },
-  { code: '+49', flag: '🇩🇪', name: 'Alemanha' },
-  { code: '+39', flag: '🇮🇹', name: 'Itália' },
-  { code: '+81', flag: '🇯🇵', name: 'Japão' },
-];
+import { evaluateNextQuestionIndex } from '../../utils/logicJump';
+import { COUNTRY_CODES } from '../../constants/countryCodes';
 
 export default function PublicFormRespondent({ slug }) {
   const [form, setForm] = useState(null);
@@ -74,8 +57,6 @@ export default function PublicFormRespondent({ slug }) {
       setFieldError('Por favor, responda esta questão antes de avançar.');
       return;
     }
-
-    // Se houver valor (ou for obrigatório), faz validações específicas por tipo
     if (rawVal) {
       // Validação de E-mail
       if (currentQ?.type === 'email') {
@@ -101,8 +82,8 @@ export default function PublicFormRespondent({ slug }) {
       }
     }
 
-    const nextStep = currentStep + 1;
-    if (currentStep < questions.length - 1) {
+    const nextStep = evaluateNextQuestionIndex(currentStep, questions, answers);
+    if (nextStep < questions.length) {
       setCurrentStep(nextStep);
       savePartialProgress(nextStep);
     } else {
