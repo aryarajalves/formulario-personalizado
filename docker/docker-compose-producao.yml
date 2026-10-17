@@ -7,7 +7,7 @@ version: "3.7"
 # 1. O banco de dados PostgreSQL é externo (já existente na infraestrutura / Swarm).
 # 2. Utiliza exclusivamente a rede externa 'network_swarm_public'.
 # 3. Todos os serviços utilizam o prefixo 'formulario_'.
-# 4. As variáveis de ambiente não possuem valores padrão expostos no arquivo.
+# 4. As variáveis de ambiente são passadas diretamente sem chaves.
 # 5. Rate limiting utiliza os valores seguros padrão definidos diretamente no core.
 # ==============================================================================
 
@@ -16,7 +16,7 @@ services:
   # 1. Serviço de Backend (FastAPI + Python)
   # ----------------------------------------------------------------------------
   formulario_backend:
-    image: ${BACKEND_IMAGE}
+    image: $BACKEND_IMAGE
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     volumes:
       - formulario_backups_local:/app/backups_local
@@ -29,64 +29,64 @@ services:
       #########################################################
       # Configurações Gerais da Aplicação #####################
       #########################################################
-      - TZ=${TZ}
-      - PROJECT_NAME=${PROJECT_NAME}
-      - API_V1_STR=${API_V1_STR}
-      - ENVIRONMENT=${ENVIRONMENT}
-      - SERVER_URL=${SERVER_URL}
-      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
-      - API_DOMAIN=${API_DOMAIN}
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+      - TZ
+      - PROJECT_NAME
+      - API_V1_STR
+      - ENVIRONMENT
+      - SERVER_URL
+      - FRONTEND_DOMAIN
+      - API_DOMAIN
+      - VITE_API_BASE_URL
 
       #########################################################
       # Configuração do Banco de Dados (PostgreSQL Externo) ###
       #########################################################
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL
 
       #########################################################
       # Configurações de Segurança e Autenticação (JWT) #######
       #########################################################
-      - SECRET_KEY=${SECRET_KEY}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - SECURITY_PASSWORD_PEPPER=${SECURITY_PASSWORD_PEPPER}
-      - SECURITY_ENCRYPTION_KEY=${SECURITY_ENCRYPTION_KEY}
+      - SECRET_KEY
+      - ACCESS_TOKEN_EXPIRE_MINUTES
+      - SECURITY_PASSWORD_PEPPER
+      - SECURITY_ENCRYPTION_KEY
 
       #########################################################
       # Credenciais Iniciais do Super Administrador ##########
       #########################################################
-      - SUPERADMIN_NAME=${SUPERADMIN_NAME}
-      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL}
-      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
+      - SUPERADMIN_NAME
+      - SUPERADMIN_EMAIL
+      - SUPERADMIN_PASSWORD
 
       #########################################################
       # Envio de E-mails Transacionais (Brevo API) ############
       #########################################################
-      - BREVO_API_KEY=${BREVO_API_KEY}
-      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL}
-      - BREVO_SENDER_NAME=${BREVO_SENDER_NAME}
+      - BREVO_API_KEY
+      - BREVO_SENDER_EMAIL
+      - BREVO_SENDER_NAME
 
       #########################################################
       # Armazenamento em Nuvem / Backups (Backblaze B2 / S3) ##
       #########################################################
-      - BACKBLAZE_ENDPOINT_URL=${BACKBLAZE_ENDPOINT_URL}
-      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
-      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
-      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
-      - BACKBLAZE_CDN_URL=${BACKBLAZE_CDN_URL}
-      - B2_FOLDER=${B2_FOLDER}
-      - B2_RETENTION_MAX=${B2_RETENTION_MAX}
+      - BACKBLAZE_ENDPOINT_URL
+      - BACKBLAZE_KEY_ID
+      - BACKBLAZE_APPLICATION_KEY
+      - BACKBLAZE_BUCKET_NAME
+      - BACKBLAZE_CDN_URL
+      - B2_FOLDER
+      - B2_RETENTION_MAX
 
       #########################################################
       # Integração Google Calendar (OAuth 2.0) ################
       #########################################################
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET
+      - GOOGLE_REDIRECT_URI
 
       #########################################################
       # CORS Granular #########################################
       #########################################################
-      - CORS_ORIGINS=${CORS_ORIGINS}
+      - CORS_ORIGINS
     deploy:
       mode: replicated
       replicas: 1
@@ -101,7 +101,7 @@ services:
         # Habilita o Traefik para o Backend
         - traefik.enable=true
         # Define as regras de roteamento do Traefik para a API Backend
-        - traefik.http.routers.formulario_backend.rule=Host(`${API_DOMAIN}`)
+        - traefik.http.routers.formulario_backend.rule=Host(`$API_DOMAIN`)
         # Define o entrypoint seguro com SSL
         - traefik.http.routers.formulario_backend.entrypoints=websecure
         # Certificado SSL Let's Encrypt
@@ -116,7 +116,7 @@ services:
   # 2. Serviço de Frontend (Nginx + React App Compilado)
   # ----------------------------------------------------------------------------
   formulario_frontend:
-    image: ${FRONTEND_IMAGE}
+    image: $FRONTEND_IMAGE
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     networks:
       network_swarm_public:
@@ -126,64 +126,64 @@ services:
       #########################################################
       # Configurações Gerais da Aplicação #####################
       #########################################################
-      - TZ=${TZ}
-      - PROJECT_NAME=${PROJECT_NAME}
-      - API_V1_STR=${API_V1_STR}
-      - ENVIRONMENT=${ENVIRONMENT}
-      - SERVER_URL=${SERVER_URL}
-      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
-      - API_DOMAIN=${API_DOMAIN}
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+      - TZ
+      - PROJECT_NAME
+      - API_V1_STR
+      - ENVIRONMENT
+      - SERVER_URL
+      - FRONTEND_DOMAIN
+      - API_DOMAIN
+      - VITE_API_BASE_URL
 
       #########################################################
       # Configuração do Banco de Dados (PostgreSQL Externo) ###
       #########################################################
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL
 
       #########################################################
       # Configurações de Segurança e Autenticação (JWT) #######
       #########################################################
-      - SECRET_KEY=${SECRET_KEY}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - SECURITY_PASSWORD_PEPPER=${SECURITY_PASSWORD_PEPPER}
-      - SECURITY_ENCRYPTION_KEY=${SECURITY_ENCRYPTION_KEY}
+      - SECRET_KEY
+      - ACCESS_TOKEN_EXPIRE_MINUTES
+      - SECURITY_PASSWORD_PEPPER
+      - SECURITY_ENCRYPTION_KEY
 
       #########################################################
       # Credenciais Iniciais do Super Administrador ##########
       #########################################################
-      - SUPERADMIN_NAME=${SUPERADMIN_NAME}
-      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL}
-      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
+      - SUPERADMIN_NAME
+      - SUPERADMIN_EMAIL
+      - SUPERADMIN_PASSWORD
 
       #########################################################
       # Envio de E-mails Transacionais (Brevo API) ############
       #########################################################
-      - BREVO_API_KEY=${BREVO_API_KEY}
-      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL}
-      - BREVO_SENDER_NAME=${BREVO_SENDER_NAME}
+      - BREVO_API_KEY
+      - BREVO_SENDER_EMAIL
+      - BREVO_SENDER_NAME
 
       #########################################################
       # Armazenamento em Nuvem / Backups (Backblaze B2 / S3) ##
       #########################################################
-      - BACKBLAZE_ENDPOINT_URL=${BACKBLAZE_ENDPOINT_URL}
-      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
-      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
-      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
-      - BACKBLAZE_CDN_URL=${BACKBLAZE_CDN_URL}
-      - B2_FOLDER=${B2_FOLDER}
-      - B2_RETENTION_MAX=${B2_RETENTION_MAX}
+      - BACKBLAZE_ENDPOINT_URL
+      - BACKBLAZE_KEY_ID
+      - BACKBLAZE_APPLICATION_KEY
+      - BACKBLAZE_BUCKET_NAME
+      - BACKBLAZE_CDN_URL
+      - B2_FOLDER
+      - B2_RETENTION_MAX
 
       #########################################################
       # Integração Google Calendar (OAuth 2.0) ################
       #########################################################
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET
+      - GOOGLE_REDIRECT_URI
 
       #########################################################
       # CORS Granular #########################################
       #########################################################
-      - CORS_ORIGINS=${CORS_ORIGINS}
+      - CORS_ORIGINS
     deploy:
       mode: replicated
       replicas: 1
@@ -198,7 +198,7 @@ services:
         # Habilita o Traefik para o Frontend
         - traefik.enable=true
         # Define as regras de roteamento do Traefik para o Frontend
-        - traefik.http.routers.formulario_frontend.rule=Host(`${FRONTEND_DOMAIN}`)
+        - traefik.http.routers.formulario_frontend.rule=Host(`$FRONTEND_DOMAIN`)
         # Define o entrypoint seguro com SSL
         - traefik.http.routers.formulario_frontend.entrypoints=websecure
         # Certificado SSL Let's Encrypt
