@@ -7,6 +7,8 @@ version: "3.7"
 # 1. O banco de dados PostgreSQL é externo (já existente na infraestrutura / Swarm).
 # 2. Utiliza exclusivamente a rede externa 'network_swarm_public'.
 # 3. Todos os serviços utilizam o prefixo 'formulario_'.
+# 4. As variáveis de ambiente não possuem valores padrão expostos no arquivo.
+# 5. Rate limiting utiliza os valores seguros padrão definidos diretamente no core.
 # ==============================================================================
 
 services:
@@ -14,7 +16,7 @@ services:
   # 1. Serviço de Backend (FastAPI + Python)
   # ----------------------------------------------------------------------------
   formulario_backend:
-    image: ${BACKEND_IMAGE:-aryalvesfernandes/formulario:backend-1.0.0}
+    image: ${BACKEND_IMAGE}
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     volumes:
       - formulario_backups_local:/app/backups_local
@@ -27,14 +29,14 @@ services:
       #########################################################
       # Configurações Gerais da Aplicação #####################
       #########################################################
-      - TZ=America/Sao_Paulo
-      - PROJECT_NAME=Formulário Personalizado
-      - API_V1_STR=/api/v1
-      - ENVIRONMENT=production
-      - SERVER_URL=${SERVER_URL:-https://${FRONTEND_DOMAIN:-formulario.seudominio.com}}
-      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN:-formulario.seudominio.com}
-      - API_DOMAIN=${API_DOMAIN:-api-formulario.seudominio.com}
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://${API_DOMAIN:-api-formulario.seudominio.com}}
+      - TZ=${TZ}
+      - PROJECT_NAME=${PROJECT_NAME}
+      - API_V1_STR=${API_V1_STR}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - SERVER_URL=${SERVER_URL}
+      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
+      - API_DOMAIN=${API_DOMAIN}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
       #########################################################
       # Configuração do Banco de Dados (PostgreSQL Externo) ###
@@ -45,55 +47,46 @@ services:
       # Configurações de Segurança e Autenticação (JWT) #######
       #########################################################
       - SECRET_KEY=${SECRET_KEY}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - SECURITY_PASSWORD_PEPPER=${SECURITY_PASSWORD_PEPPER}
       - SECURITY_ENCRYPTION_KEY=${SECURITY_ENCRYPTION_KEY}
 
       #########################################################
       # Credenciais Iniciais do Super Administrador ##########
       #########################################################
-      - SUPERADMIN_NAME=${SUPERADMIN_NAME:-Super Admin}
-      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:-admin@seudominio.com}
+      - SUPERADMIN_NAME=${SUPERADMIN_NAME}
+      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL}
       - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
 
       #########################################################
       # Envio de E-mails Transacionais (Brevo API) ############
       #########################################################
-      - BREVO_API_KEY=${BREVO_API_KEY:-xkeysib-sua-chave-aqui}
-      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL:-suporte@seudominio.com}
-      - BREVO_SENDER_NAME=${BREVO_SENDER_NAME:-Formulário Personalizado}
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL}
+      - BREVO_SENDER_NAME=${BREVO_SENDER_NAME}
 
       #########################################################
       # Armazenamento em Nuvem / Backups (Backblaze B2 / S3) ##
       #########################################################
-      - BACKBLAZE_ENDPOINT_URL=${BACKBLAZE_ENDPOINT_URL:-https://s3.us-west-004.backblazeb2.com}
-      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID:-seu-key-id}
-      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY:-sua-application-key}
-      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME:-formulario-producao}
-      - BACKBLAZE_CDN_URL=${BACKBLAZE_CDN_URL:-https://s3.us-west-004.backblazeb2.com/formulario-producao}
-      - B2_FOLDER=${B2_FOLDER:-formulario/backups/}
-      - B2_RETENTION_MAX=${B2_RETENTION_MAX:-30}
+      - BACKBLAZE_ENDPOINT_URL=${BACKBLAZE_ENDPOINT_URL}
+      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
+      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
+      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
+      - BACKBLAZE_CDN_URL=${BACKBLAZE_CDN_URL}
+      - B2_FOLDER=${B2_FOLDER}
+      - B2_RETENTION_MAX=${B2_RETENTION_MAX}
 
       #########################################################
       # Integração Google Calendar (OAuth 2.0) ################
       #########################################################
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-https://${API_DOMAIN:-api-formulario.seudominio.com}/api/v1/forms/integrations/google-calendar/callback}
-
-      #########################################################
-      # Rate Limiting (Requisições por minuto por IP) #########
-      #########################################################
-      - RATE_LIMIT_LOGIN=${RATE_LIMIT_LOGIN:-5}
-      - RATE_LIMIT_REGISTER=${RATE_LIMIT_REGISTER:-3}
-      - RATE_LIMIT_VERIFY_OTP=${RATE_LIMIT_VERIFY_OTP:-5}
-      - RATE_LIMIT_PUBLIC_FORMS=${RATE_LIMIT_PUBLIC_FORMS:-30}
-      - RATE_LIMIT_AUTHENTICATED=${RATE_LIMIT_AUTHENTICATED:-200}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
 
       #########################################################
       # CORS Granular #########################################
       #########################################################
-      - CORS_ORIGINS=${CORS_ORIGINS:-https://${FRONTEND_DOMAIN:-formulario.seudominio.com}}
+      - CORS_ORIGINS=${CORS_ORIGINS}
     deploy:
       mode: replicated
       replicas: 1
@@ -108,7 +101,7 @@ services:
         # Habilita o Traefik para o Backend
         - traefik.enable=true
         # Define as regras de roteamento do Traefik para a API Backend
-        - traefik.http.routers.formulario_backend.rule=Host(`${API_DOMAIN:-api-formulario.seudominio.com}`)
+        - traefik.http.routers.formulario_backend.rule=Host(`${API_DOMAIN}`)
         # Define o entrypoint seguro com SSL
         - traefik.http.routers.formulario_backend.entrypoints=websecure
         # Certificado SSL Let's Encrypt
@@ -123,14 +116,74 @@ services:
   # 2. Serviço de Frontend (Nginx + React App Compilado)
   # ----------------------------------------------------------------------------
   formulario_frontend:
-    image: ${FRONTEND_IMAGE:-aryalvesfernandes/formulario:frontend-1.0.0}
+    image: ${FRONTEND_IMAGE}
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     networks:
       network_swarm_public:
         aliases:
           - formulario_frontend
     environment:
-      - TZ=America/Sao_Paulo
+      #########################################################
+      # Configurações Gerais da Aplicação #####################
+      #########################################################
+      - TZ=${TZ}
+      - PROJECT_NAME=${PROJECT_NAME}
+      - API_V1_STR=${API_V1_STR}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - SERVER_URL=${SERVER_URL}
+      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN}
+      - API_DOMAIN=${API_DOMAIN}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+      #########################################################
+      # Configuração do Banco de Dados (PostgreSQL Externo) ###
+      #########################################################
+      - DATABASE_URL=${DATABASE_URL}
+
+      #########################################################
+      # Configurações de Segurança e Autenticação (JWT) #######
+      #########################################################
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - SECURITY_PASSWORD_PEPPER=${SECURITY_PASSWORD_PEPPER}
+      - SECURITY_ENCRYPTION_KEY=${SECURITY_ENCRYPTION_KEY}
+
+      #########################################################
+      # Credenciais Iniciais do Super Administrador ##########
+      #########################################################
+      - SUPERADMIN_NAME=${SUPERADMIN_NAME}
+      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
+
+      #########################################################
+      # Envio de E-mails Transacionais (Brevo API) ############
+      #########################################################
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - BREVO_SENDER_EMAIL=${BREVO_SENDER_EMAIL}
+      - BREVO_SENDER_NAME=${BREVO_SENDER_NAME}
+
+      #########################################################
+      # Armazenamento em Nuvem / Backups (Backblaze B2 / S3) ##
+      #########################################################
+      - BACKBLAZE_ENDPOINT_URL=${BACKBLAZE_ENDPOINT_URL}
+      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
+      - BACKBLAZE_APPLICATION_KEY=${BACKBLAZE_APPLICATION_KEY}
+      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
+      - BACKBLAZE_CDN_URL=${BACKBLAZE_CDN_URL}
+      - B2_FOLDER=${B2_FOLDER}
+      - B2_RETENTION_MAX=${B2_RETENTION_MAX}
+
+      #########################################################
+      # Integração Google Calendar (OAuth 2.0) ################
+      #########################################################
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+
+      #########################################################
+      # CORS Granular #########################################
+      #########################################################
+      - CORS_ORIGINS=${CORS_ORIGINS}
     deploy:
       mode: replicated
       replicas: 1
@@ -145,7 +198,7 @@ services:
         # Habilita o Traefik para o Frontend
         - traefik.enable=true
         # Define as regras de roteamento do Traefik para o Frontend
-        - traefik.http.routers.formulario_frontend.rule=Host(`${FRONTEND_DOMAIN:-formulario.seudominio.com}`)
+        - traefik.http.routers.formulario_frontend.rule=Host(`${FRONTEND_DOMAIN}`)
         # Define o entrypoint seguro com SSL
         - traefik.http.routers.formulario_frontend.entrypoints=websecure
         # Certificado SSL Let's Encrypt
