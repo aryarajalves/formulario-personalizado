@@ -25,6 +25,7 @@ services:
       network_swarm_public:
         aliases:
           - formulario_backend
+          - backend
     environment:
       #########################################################
       # Configurações Gerais da Aplicação #####################
