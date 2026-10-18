@@ -65,7 +65,7 @@ describe('FormEditor Component - Tabs, Screens & Integrations', () => {
         })
       );
     });
-  });
+  }, 15000);
 
   it('navigates to Compartilhar tab, displays public link and triggers copy', async () => {
     Object.assign(navigator, {

@@ -75,11 +75,11 @@ export function classifyLogLine(rawLine) {
     return {
       type: 'error',
       badge: 'ERRO',
-      badgeColor: '#ef4444',
-      badgeBg: 'rgba(239, 68, 68, 0.16)',
-      badgeBorder: 'rgba(239, 68, 68, 0.35)',
-      textColor: '#fca5a5',
-      lineBg: 'rgba(239, 68, 68, 0.08)',
+      badgeColor: '#dc2626',
+      badgeBg: '#fee2e2',
+      badgeBorder: '#fca5a5',
+      textColor: '#b91c1c',
+      lineBg: '#fff1f2',
       formattedLine: line,
     };
   }
@@ -95,11 +95,11 @@ export function classifyLogLine(rawLine) {
     return {
       type: 'warning',
       badge: 'AVISO',
-      badgeColor: '#f59e0b',
-      badgeBg: 'rgba(245, 158, 11, 0.16)',
-      badgeBorder: 'rgba(245, 158, 11, 0.35)',
-      textColor: '#fde047',
-      lineBg: 'rgba(245, 158, 11, 0.05)',
+      badgeColor: '#d97706',
+      badgeBg: '#fef3c7',
+      badgeBorder: '#fcd34d',
+      textColor: '#b45309',
+      lineBg: '#fffbeb',
       formattedLine: line,
     };
   }
@@ -112,9 +112,9 @@ export function classifyLogLine(rawLine) {
     const is2xx = codeNum >= 200 && codeNum < 300;
     const is3xx = codeNum >= 300 && codeNum < 400;
 
-    const badgeColor = is2xx ? '#10b981' : is3xx ? '#06b6d4' : '#f97316';
-    const badgeBg = is2xx ? 'rgba(16, 185, 129, 0.16)' : 'rgba(6, 182, 212, 0.16)';
-    const badgeBorder = is2xx ? 'rgba(16, 185, 129, 0.35)' : 'rgba(6, 182, 212, 0.35)';
+    const badgeColor = is2xx ? '#059669' : is3xx ? '#0284c7' : '#ea580c';
+    const badgeBg = is2xx ? '#d1fae5' : is3xx ? '#e0f2fe' : '#ffedd5';
+    const badgeBorder = is2xx ? '#6ee7b7' : is3xx ? '#7dd3fc' : '#fdba74';
 
     return {
       type: 'http',
@@ -122,7 +122,7 @@ export function classifyLogLine(rawLine) {
       badgeColor,
       badgeBg,
       badgeBorder,
-      textColor: '#cbd5e1',
+      textColor: '#1e293b',
       lineBg: 'transparent',
       formattedLine: line,
       httpMeta: { method, path, statusCode },
@@ -133,10 +133,10 @@ export function classifyLogLine(rawLine) {
   return {
     type: 'info',
     badge: 'INFO',
-    badgeColor: '#38bdf8',
-    badgeBg: 'rgba(56, 189, 248, 0.16)',
-    badgeBorder: 'rgba(56, 189, 248, 0.35)',
-    textColor: '#cbd5e1',
+    badgeColor: '#0284c7',
+    badgeBg: '#e0f2fe',
+    badgeBorder: '#bae6fd',
+    textColor: '#1e293b',
     lineBg: 'transparent',
     formattedLine: line,
   };

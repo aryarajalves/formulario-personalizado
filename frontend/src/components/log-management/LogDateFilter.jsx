@@ -31,18 +31,19 @@ export default function LogDateFilter({
         alignItems: 'center',
         gap: '12px',
         flexWrap: 'wrap',
-        padding: '10px 14px',
-        backgroundColor: '#1e293b',
-        borderRadius: '8px',
-        border: isActive ? '1px solid #38bdf8' : '1px solid #334155',
-        marginBottom: '12px',
+        padding: '12px 18px',
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        border: isActive ? '1px solid #0284c7' : '1px solid #e2e8f0',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+        marginBottom: '14px',
       }}
       data-testid="log-date-filter-bar"
     >
       {/* Campo Data */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <Calendar size={15} color="#38bdf8" />
-        <label htmlFor="log-date-input" style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+        <Calendar size={15} color="#0284c7" />
+        <label htmlFor="log-date-input" style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
           Data:
         </label>
         <input
@@ -51,12 +52,12 @@ export default function LogDateFilter({
           value={selectedDate}
           onChange={(e) => onDateChange(e.target.value)}
           style={{
-            padding: '4px 8px',
-            borderRadius: '6px',
-            border: '1px solid #475569',
-            backgroundColor: '#0f172a',
-            color: '#f8fafc',
-            fontSize: '12px',
+            padding: '6px 10px',
+            borderRadius: '8px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: '#ffffff',
+            color: '#1e293b',
+            fontSize: '13px',
             outline: 'none',
           }}
           data-testid="log-date-input"
@@ -65,13 +66,13 @@ export default function LogDateFilter({
           type="button"
           onClick={handleSetToday}
           style={{
-            padding: '4px 8px',
-            borderRadius: '6px',
-            backgroundColor: '#334155',
-            color: '#38bdf8',
-            fontSize: '11px',
+            padding: '6px 10px',
+            borderRadius: '8px',
+            backgroundColor: '#f1f5f9',
+            color: '#0284c7',
+            fontSize: '12px',
             fontWeight: 600,
-            border: 'none',
+            border: '1px solid #e2e8f0',
             cursor: 'pointer',
           }}
           data-testid="btn-today-date"
@@ -83,8 +84,8 @@ export default function LogDateFilter({
 
       {/* Horário Inicial */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <Clock size={15} color="#94a3b8" />
-        <label htmlFor="log-start-time" style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+        <Clock size={15} color="#64748b" />
+        <label htmlFor="log-start-time" style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
           De:
         </label>
         <input
@@ -93,12 +94,12 @@ export default function LogDateFilter({
           value={startTime}
           onChange={(e) => onStartTimeChange(e.target.value)}
           style={{
-            padding: '4px 8px',
-            borderRadius: '6px',
-            border: '1px solid #475569',
-            backgroundColor: '#0f172a',
-            color: '#f8fafc',
-            fontSize: '12px',
+            padding: '6px 10px',
+            borderRadius: '8px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: '#ffffff',
+            color: '#1e293b',
+            fontSize: '13px',
             outline: 'none',
           }}
           data-testid="log-start-time-input"
@@ -107,7 +108,7 @@ export default function LogDateFilter({
 
       {/* Horário Final */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <label htmlFor="log-end-time" style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+        <label htmlFor="log-end-time" style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
           Até:
         </label>
         <input
@@ -116,12 +117,12 @@ export default function LogDateFilter({
           value={endTime}
           onChange={(e) => onEndTimeChange(e.target.value)}
           style={{
-            padding: '4px 8px',
-            borderRadius: '6px',
-            border: '1px solid #475569',
-            backgroundColor: '#0f172a',
-            color: '#f8fafc',
-            fontSize: '12px',
+            padding: '6px 10px',
+            borderRadius: '8px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: '#ffffff',
+            color: '#1e293b',
+            fontSize: '13px',
             outline: 'none',
           }}
           data-testid="log-end-time-input"
@@ -129,26 +130,27 @@ export default function LogDateFilter({
       </div>
 
       {/* Ações */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
         <button
           type="button"
           onClick={onApplyFilter}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '5px',
-            padding: '5px 12px',
-            borderRadius: '6px',
+            gap: '6px',
+            padding: '7px 14px',
+            borderRadius: '8px',
             backgroundColor: '#0284c7',
             color: '#ffffff',
-            fontSize: '12px',
+            fontSize: '13px',
             fontWeight: 600,
             border: 'none',
             cursor: 'pointer',
+            boxShadow: '0 1px 2px rgba(2, 132, 199, 0.2)',
           }}
           data-testid="apply-date-filter-btn"
         >
-          <Search size={13} />
+          <Search size={14} />
           <span>Filtrar período</span>
         </button>
 
@@ -160,19 +162,19 @@ export default function LogDateFilter({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              padding: '5px 10px',
-              borderRadius: '6px',
-              backgroundColor: '#334155',
-              color: '#f87171',
-              fontSize: '12px',
+              padding: '7px 12px',
+              borderRadius: '8px',
+              backgroundColor: '#fee2e2',
+              color: '#dc2626',
+              fontSize: '13px',
               fontWeight: 600,
-              border: 'none',
+              border: '1px solid #fecaca',
               cursor: 'pointer',
             }}
             data-testid="clear-date-filter-btn"
             title="Limpar filtro de data e horário"
           >
-            <X size={13} />
+            <X size={14} />
             <span>Limpar</span>
           </button>
         )}

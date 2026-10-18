@@ -17,15 +17,16 @@ export default function LogTypeFilter({ currentFilter, onSelectFilter, counts })
         alignItems: 'center',
         gap: '8px',
         flexWrap: 'wrap',
-        padding: '10px 14px',
-        backgroundColor: '#1e293b',
-        borderRadius: '8px',
-        border: '1px solid #334155',
-        marginBottom: '12px',
+        padding: '12px 18px',
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+        marginBottom: '14px',
       }}
       data-testid="log-type-filter-bar"
     >
-      <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginRight: '4px' }}>
+      <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569', marginRight: '4px' }}>
         Separar por tipo:
       </span>
       {filterOptions.map((opt) => {
@@ -40,27 +41,27 @@ export default function LogTypeFilter({ currentFilter, onSelectFilter, counts })
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontSize: '13px',
               fontWeight: isActive ? 600 : 500,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              border: isActive ? `1px solid ${opt.color}` : '1px solid transparent',
-              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-              color: isActive ? '#f8fafc' : '#94a3b8',
+              border: isActive ? `1.5px solid ${opt.color}` : '1px solid #e2e8f0',
+              backgroundColor: isActive ? 'rgba(2, 132, 199, 0.08)' : '#f8fafc',
+              color: isActive ? '#0f172a' : '#64748b',
             }}
             data-testid={`filter-btn-${opt.id}`}
           >
-            <IconComponent size={13} color={opt.color} />
+            <IconComponent size={14} color={opt.color} />
             <span>{opt.label}</span>
             <span
               style={{
                 fontSize: '11px',
-                padding: '1px 6px',
+                padding: '2px 7px',
                 borderRadius: '10px',
-                backgroundColor: isActive ? opt.color : '#334155',
-                color: isActive ? '#0f172a' : '#cbd5e1',
+                backgroundColor: isActive ? opt.color : '#e2e8f0',
+                color: isActive ? '#ffffff' : '#475569',
                 fontWeight: 700,
                 minWidth: '18px',
                 textAlign: 'center',

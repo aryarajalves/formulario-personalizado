@@ -21,7 +21,7 @@ describe('logUtils Helper', () => {
     const parsed = classifyLogLine(errorLine);
     expect(parsed.type).toBe('error');
     expect(parsed.badge).toBe('ERRO');
-    expect(parsed.badgeColor).toBe('#ef4444');
+    expect(parsed.badgeColor).toBe('#dc2626');
   });
 
   it('classifies warning log lines with amber badge and styling', () => {
@@ -29,7 +29,7 @@ describe('logUtils Helper', () => {
     const parsed = classifyLogLine(warnLine);
     expect(parsed.type).toBe('warning');
     expect(parsed.badge).toBe('AVISO');
-    expect(parsed.badgeColor).toBe('#f59e0b');
+    expect(parsed.badgeColor).toBe('#d97706');
   });
 
   it('classifies HTTP request lines with HTTP status badge and green color for 2xx', () => {
@@ -37,7 +37,7 @@ describe('logUtils Helper', () => {
     const parsed = classifyLogLine(httpLine);
     expect(parsed.type).toBe('http');
     expect(parsed.badge).toBe('HTTP 200');
-    expect(parsed.badgeColor).toBe('#10b981');
+    expect(parsed.badgeColor).toBe('#059669');
     expect(parsed.formattedLine).toContain('14:59:35');
   });
 
@@ -46,6 +46,6 @@ describe('logUtils Helper', () => {
     const parsed = classifyLogLine(infoLine);
     expect(parsed.type).toBe('info');
     expect(parsed.badge).toBe('INFO');
-    expect(parsed.badgeColor).toBe('#38bdf8');
+    expect(parsed.badgeColor).toBe('#0284c7');
   });
 });

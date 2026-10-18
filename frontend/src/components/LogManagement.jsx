@@ -274,10 +274,10 @@ export default function LogManagement({ currentUser }) {
         className="terminal-view-card"
         data-testid="terminal-container"
         style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: '#ffffff',
           borderRadius: '12px',
-          border: '1px solid #1e293b',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -289,21 +289,21 @@ export default function LogManagement({ currentUser }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '10px 16px',
-            backgroundColor: '#1e293b',
-            borderBottom: '1px solid #334155',
+            padding: '12px 18px',
+            backgroundColor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444' }}></span>
             <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></span>
             <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10b981' }}></span>
-            <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginLeft: '8px' }}>
+            <span style={{ color: '#475569', fontSize: '13px', fontWeight: 600, marginLeft: '8px', fontFamily: 'monospace' }}>
               docker logs --tail {tailLines} {services.find((s) => s.id === selectedService)?.container}
               {filterDate && ` [${filterDate}${startTime ? ` ${startTime}` : ''}${endTime ? ` - ${endTime}` : ''}]`}
             </span>
           </div>
-          <span style={{ color: '#64748b', fontSize: '12px' }}>
+          <span style={{ color: '#64748b', fontSize: '12px', fontWeight: 500 }}>
             {filteredLogs.length} linha(s) {(searchTerm || selectedType !== 'all') && `(filtrado de ${logs.length})`}
           </span>
         </div>
