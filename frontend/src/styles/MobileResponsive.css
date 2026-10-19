@@ -1,0 +1,452 @@
+/* =========================================================
+   MOBILE RESPONSIVE SYSTEM (DESIGN SYSTEM ADAPTATION)
+   Breakpoint padrão: max-width: 768px
+   Respeita limite estrito (< 500 linhas)
+   ========================================================= */
+
+/* Desktop defaults: elementos mobile ficam ocultos */
+@media (min-width: 769px) {
+  .mobile-header {
+    display: none !important;
+  }
+  .sidebar-backdrop {
+    display: none !important;
+  }
+  .sidebar-close-mobile-btn {
+    display: none !important;
+  }
+}
+
+/* Estilos padrão Desktop de Toolbar e Busca de Logs */
+.log-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 250px;
+}
+
+.log-search-input-field {
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.log-toolbar-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.log-buttons-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* =========================================================
+   Mobile Viewports (Telas de Celular <= 768px)
+   ========================================================= */
+@media (max-width: 768px) {
+  /* Layout Base da Aplicação */
+  .app-container {
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  .main-content {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Header Superior Mobile */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .mobile-hamburger-btn {
+    background: transparent;
+    border: none;
+    color: #1e293b;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  .mobile-hamburger-btn:hover,
+  .mobile-hamburger-btn:active {
+    background-color: #f1f5f9;
+  }
+
+  .mobile-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    color: #0b192c;
+    font-size: 17px;
+    letter-spacing: -0.3px;
+    user-select: none;
+  }
+
+  .mobile-logo-icon {
+    width: 26px;
+    height: 26px;
+    background-color: #ea384c;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(234, 56, 76, 0.25);
+  }
+
+  .mobile-user-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background-color: #7c3aed;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13.5px;
+    box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
+  }
+
+  /* Sidebar tipo Drawer Off-Canvas no Mobile */
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: -300px;
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    z-index: 1000;
+    background-color: #ffffff;
+    box-shadow: none;
+    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.open {
+    left: 0;
+    box-shadow: 6px 0 25px rgba(0, 0, 0, 0.25);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+  }
+
+  .sidebar-close-mobile-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    transition: all 0.2s;
+  }
+
+  .sidebar-close-mobile-btn:hover {
+    background-color: #fee2e2;
+    color: #ef4444;
+  }
+
+  /* Padding Geral de Telas no Mobile */
+  .users-page,
+  .backup-page-container,
+  .forms-content-area {
+    padding: 16px 14px !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Cabeçalhos de Páginas */
+  .page-header,
+  .forms-header,
+  .backup-page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .page-header h2,
+  .forms-title,
+  .backup-page-header h1 {
+    font-size: 20px !important;
+  }
+
+  /* Botões Principais no Topo */
+  .primary-btn,
+  .create-form-main-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    box-sizing: border-box;
+  }
+
+  /* Abas Secundárias Roláveis */
+  .sub-tabs-container {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .sub-tab-btn {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  /* Tabelas e Contêineres Roláveis */
+  .table-card,
+  .forms-table-card {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .users-table {
+    min-width: 620px;
+  }
+
+  .forms-table-header,
+  .form-row-item {
+    min-width: 640px;
+  }
+
+  /* Barras de Ferramentas e Filtros Gerais */
+  .table-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .toolbar-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100%;
+  }
+
+  .toolbar-actions select,
+  .toolbar-actions input,
+  .bulk-delete-btn,
+  .refresh-btn {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Correção do Input de Busca de Logs sem Vazio/Espaço em Branco */
+  .log-table-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+  }
+
+  .log-search-box {
+    flex: none !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .log-search-input-field {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 9px 12px !important;
+    font-size: 13.5px !important;
+  }
+
+  .log-toolbar-actions-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .log-tail-box {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .log-tail-box select {
+    flex: 1 !important;
+    max-width: 180px !important;
+  }
+
+  .log-buttons-wrap {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .log-buttons-wrap .pagination-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+  }
+
+  .pagination-bar {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 12px !important;
+  }
+
+  /* Gestão de Formulários */
+  .forms-management-container {
+    flex-direction: column !important;
+  }
+
+  .forms-sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 12px 14px !important;
+    gap: 12px !important;
+    box-sizing: border-box;
+  }
+
+  .folders-section {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .folder-item {
+    padding: 6px 10px !important;
+    font-size: 12.5px !important;
+  }
+
+  .forms-filter-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .search-input-box {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .filter-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Backup Automático: Métricas e Cards */
+  .backup-metrics-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .backup-schedule-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Correção do Banner de Backup Manual (Texto com largura total e botão abaixo) */
+  .manual-backup-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 18px 16px !important;
+    gap: 16px !important;
+  }
+
+  .manual-backup-text {
+    width: 100% !important;
+    flex: none !important;
+  }
+
+  .manual-backup-title {
+    font-size: 16px !important;
+    gap: 8px !important;
+  }
+
+  .manual-backup-desc {
+    width: 100% !important;
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+    color: #475569 !important;
+    margin-top: 6px !important;
+  }
+
+  .trigger-backup-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    padding: 12px 18px !important;
+    white-space: normal !important;
+  }
+
+  .schedule-settings-card,
+  .dropzone-card {
+    padding: 18px 14px !important;
+  }
+
+  /* Modais no Mobile */
+  .modal-container,
+  .confirm-dialog,
+  .invite-modal,
+  .delete-confirm-card {
+    width: 92% !important;
+    max-width: 440px !important;
+    padding: 18px 16px !important;
+    box-sizing: border-box;
+  }
+}

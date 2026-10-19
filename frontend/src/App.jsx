@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Menu } from 'lucide-react';
 import './App.css';
 import Sidebar from './components/Sidebar';
 import Login from './components/Login';
@@ -18,6 +19,7 @@ function App() {
   const [token, setToken] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isEditingForm, setIsEditingForm] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('active_tab') || 'users';
   });
@@ -116,15 +118,54 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Backdrop overlay para fechar a gaveta no celular */}
+      {isMobileMenuOpen && !isEditingForm && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+          data-testid="sidebar-backdrop"
+        />
+      )}
+
       {!isEditingForm && (
         <Sidebar
           activeTab={activeTab}
-          onSelectTab={handleSelectTab}
+          onSelectTab={(tabId) => {
+            handleSelectTab(tabId);
+            setIsMobileMenuOpen(false);
+          }}
           user={user}
           onLogout={handlePromptLogout}
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
         />
       )}
       <main className="main-content" aria-label="Conteúdo Principal">
+        {/* Barra de cabeçalho mobile visível apenas em telas pequenas */}
+        {!isEditingForm && (
+          <header className="mobile-header" data-testid="mobile-header">
+            <button
+              type="button"
+              className="mobile-hamburger-btn"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              aria-label="Abrir menu"
+              data-testid="mobile-hamburger-btn"
+            >
+              <Menu size={22} />
+            </button>
+            <div className="mobile-header-brand">
+              <div className="mobile-logo-icon">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+              <span className="mobile-brand-title">Formulario</span>
+            </div>
+            <div className="mobile-user-badge" data-testid="mobile-user-badge">
+              {(user?.name || 'U').charAt(0).toUpperCase()}
+            </div>
+          </header>
+        )}
         {activeTab === 'forms' && (
           <FormsManagement 
             currentUser={user} 

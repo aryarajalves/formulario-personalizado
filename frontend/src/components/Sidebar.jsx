@@ -1,7 +1,7 @@
 import React from 'react';
-import { Database, Users, LogOut, Terminal, FileText } from 'lucide-react';
+import { Database, Users, LogOut, Terminal, FileText, X } from 'lucide-react';
 
-export default function Sidebar({ activeTab = 'users', onSelectTab, user, onLogout }) {
+export default function Sidebar({ activeTab = 'users', onSelectTab, user, onLogout, isOpen = false, onClose }) {
   const isSuperAdmin = user?.role === 'superadmin';
 
   // Categorias de itens do menu
@@ -28,6 +28,9 @@ export default function Sidebar({ activeTab = 'users', onSelectTab, user, onLogo
     if (onSelectTab) {
       onSelectTab(id);
     }
+    if (onClose) {
+      onClose();
+    }
   };
 
   const userName = user?.name || 'Super Admin';
@@ -35,7 +38,7 @@ export default function Sidebar({ activeTab = 'users', onSelectTab, user, onLogo
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
-    <aside className="sidebar" aria-label="Menu Lateral">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`} aria-label="Menu Lateral">
       <div className="sidebar-top">
         {/* Logo header */}
         <div className="logo-container">
@@ -45,6 +48,17 @@ export default function Sidebar({ activeTab = 'users', onSelectTab, user, onLogo
             </svg>
           </div>
           <span className="logo-text">Formulario</span>
+          {onClose && (
+            <button
+              type="button"
+              className="sidebar-close-mobile-btn"
+              onClick={onClose}
+              aria-label="Fechar menu"
+              data-testid="sidebar-close-btn"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         {/* Navigation Buttons com Categorias */}

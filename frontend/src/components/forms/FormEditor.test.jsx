@@ -396,6 +396,48 @@ describe('FormEditor Component - Navigation, Questions & Modals', () => {
       );
     });
   });
+
+  it('renders mobile editor subnav and switches between questions, canvas, and config panels on mobile', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 1,
+        title: 'Formulário Teste Mobile',
+        slug: 'form-mobile',
+        status: 'PUBLICADO',
+        questions: [{ id: 'q1', type: 'short_text', title: 'Pergunta Mobile' }],
+      })
+    });
+
+    const { container } = render(
+      <ToastProvider>
+        <FormEditor formId={1} onBack={() => {}} />
+      </ToastProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mobile-editor-subnav')).toBeDefined();
+    });
+
+    const workspace = container.querySelector('.editor-workspace');
+    expect(workspace).toHaveClass('mobile-view-questions');
+
+    // Alterna para o Preview (Canvas)
+    const previewBtn = screen.getByTestId('mobile-subnav-canvas');
+    fireEvent.click(previewBtn);
+    expect(workspace).toHaveClass('mobile-view-canvas');
+
+    // Alterna para Configuração
+    const configBtn = screen.getByTestId('mobile-subnav-config');
+    fireEvent.click(configBtn);
+    expect(workspace).toHaveClass('mobile-view-config');
+
+    // Volta para Questões
+    const questionsBtn = screen.getByTestId('mobile-subnav-questions');
+    fireEvent.click(questionsBtn);
+    expect(workspace).toHaveClass('mobile-view-questions');
+  });
 });
+
 
 

@@ -10,6 +10,11 @@ A solução oferece uma experiência intuitiva no estilo *Typeform* com transiç
 
 ### 🎨 Criador & Editor de Formulários (Form Builder)
 - **Editor Visual Interativo:** Criação fluida com tela de boas-vindas (*Welcome Screen*), tela de perguntas modulares e tela de finalização (*Ending Screen*).
+- **Responsividade Mobile Completa:**
+  - Alternador móvel inteligente entre painéis (`Questões`, `Preview`, `Configuração`);
+  - Navegação superior em grid de 4 colunas acessível (`Editar`, `Integrar`, `Compartilhar`, `Resultados`);
+  - Área de compartilhamento público responsiva com cópia rápida e botões de ação sem sobreposição ou corte;
+  - Sidebar retrátil (Drawer) com backdrop translúcido e fechamento seguro.
 - **Tipos Diversificados de Pergunta:**
   - 📝 **Texto Curto / Texto Longo (Parágrafo)**;
   - 🔘 **Múltipla Escolha & Caixa de Seleção**;
@@ -21,6 +26,7 @@ A solução oferece uma experiência intuitiva no estilo *Typeform* com transiç
 
 ### 🌐 Resposta Pública (Public Respondent)
 - **Experiência Imersiva (Estilo Typeform):** Navegação fluida pergunta a pergunta, atalhos de teclado (Enter, setas) e suporte total a dispositivos móveis.
+- **Otimização Mobile:** Ajustes de espaçamento em inputs, textos alinhados e remoção de excesso de margens em telas menores.
 - **Captura Parcial Automática:** Captura respostas a partir da primeira pergunta preenchida, permitindo visualizar leads incompletos e taxa de abandono do formulário.
 - **Validação em Tempo Real:** Verificação imediata de campos obrigatórios e formatos de contato.
 

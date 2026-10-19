@@ -56,4 +56,39 @@ describe('Sidebar Component', () => {
     fireEvent.click(backupBtn);
     expect(onSelectTabMock).toHaveBeenCalledWith('backup');
   });
+
+  it('renders close button on mobile and applies "open" class when isOpen is true', () => {
+    const onCloseMock = vi.fn();
+    const { container } = render(
+      <Sidebar isOpen={true} onClose={onCloseMock} />
+    );
+
+    const aside = container.querySelector('aside.sidebar');
+    expect(aside).toHaveClass('open');
+
+    const closeBtn = screen.getByTestId('sidebar-close-btn');
+    expect(closeBtn).toBeInTheDocument();
+
+    fireEvent.click(closeBtn);
+    expect(onCloseMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onClose when a navigation item is clicked', () => {
+    const onSelectTabMock = vi.fn();
+    const onCloseMock = vi.fn();
+    render(
+      <Sidebar
+        isOpen={true}
+        onSelectTab={onSelectTabMock}
+        onClose={onCloseMock}
+      />
+    );
+
+    const formsBtn = screen.getByTestId('nav-item-forms');
+    fireEvent.click(formsBtn);
+
+    expect(onSelectTabMock).toHaveBeenCalledWith('forms');
+    expect(onCloseMock).toHaveBeenCalledTimes(1);
+  });
 });
+

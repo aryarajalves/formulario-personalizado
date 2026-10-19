@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, 
   Edit2, 
   Sliders, 
   Share2, 
   BarChart2, 
-  Loader2 
+  Loader2,
+  List,
+  Eye,
+  Settings
 } from 'lucide-react';
 import QuestionTypePickerModal from './QuestionTypePickerModal';
 import { useFormEditor } from './editor/useFormEditor';
@@ -82,6 +85,7 @@ export default function FormEditor({ formId, onBack }) {
     copyShareLink
   } = useFormEditor(formId);
 
+  const [mobileEditorSection, setMobileEditorSection] = useState('questions');
 
   if (loading || !form) {
     return (
@@ -206,61 +210,94 @@ export default function FormEditor({ formId, onBack }) {
           onGoToShare={() => setEditorTab('compartilhar')}
         />
       ) : (
-        /* Área de Trabalho do Editor (3 colunas) */
-        <div className="editor-workspace">
-          {/* COLUNA ESQUERDA: Lista de Questões e Telas */}
-          <EditorSidebar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            form={form}
-            activeItemType={activeItemType}
-            setActiveItemType={setActiveItemType}
-            selectedQuestionIndex={selectedQuestionIndex}
-            setSelectedQuestionIndex={setSelectedQuestionIndex}
-            selectedEndingIndex={selectedEndingIndex}
-            setSelectedEndingIndex={setSelectedEndingIndex}
-            handleToggleWelcomeScreen={handleToggleWelcomeScreen}
-            openTypePickerForAdd={openTypePickerForAdd}
-            promptDeleteQuestion={promptDeleteQuestion}
-            handleAddEndingScreen={handleAddEndingScreen}
-            promptDeleteEndingScreen={promptDeleteEndingScreen}
-            handleUpdateTheme={handleUpdateTheme}
-            saving={saving}
-          />
+        <>
+          {/* Sub-navegação Mobile do Editor para alternar entre os 3 painéis */}
+          <div className="mobile-editor-subnav" data-testid="mobile-editor-subnav">
+            <button
+              type="button"
+              className={`mobile-subnav-btn ${mobileEditorSection === 'questions' ? 'active' : ''}`}
+              onClick={() => setMobileEditorSection('questions')}
+              data-testid="mobile-subnav-questions"
+            >
+              <List size={15} />
+              <span>Questões</span>
+            </button>
+            <button
+              type="button"
+              className={`mobile-subnav-btn ${mobileEditorSection === 'canvas' ? 'active' : ''}`}
+              onClick={() => setMobileEditorSection('canvas')}
+              data-testid="mobile-subnav-canvas"
+            >
+              <Eye size={15} />
+              <span>Preview</span>
+            </button>
+            <button
+              type="button"
+              className={`mobile-subnav-btn ${mobileEditorSection === 'config' ? 'active' : ''}`}
+              onClick={() => setMobileEditorSection('config')}
+              data-testid="mobile-subnav-config"
+            >
+              <Settings size={15} />
+              <span>Configuração</span>
+            </button>
+          </div>
+
+          {/* Área de Trabalho do Editor (3 colunas no desktop, alternável no mobile) */}
+          <div className={`editor-workspace mobile-view-${mobileEditorSection}`}>
+            {/* COLUNA ESQUERDA: Lista de Questões e Telas */}
+            <EditorSidebar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              form={form}
+              activeItemType={activeItemType}
+              setActiveItemType={setActiveItemType}
+              selectedQuestionIndex={selectedQuestionIndex}
+              setSelectedQuestionIndex={setSelectedQuestionIndex}
+              selectedEndingIndex={selectedEndingIndex}
+              setSelectedEndingIndex={setSelectedEndingIndex}
+              handleToggleWelcomeScreen={handleToggleWelcomeScreen}
+              openTypePickerForAdd={openTypePickerForAdd}
+              promptDeleteQuestion={promptDeleteQuestion}
+              handleAddEndingScreen={handleAddEndingScreen}
+              promptDeleteEndingScreen={promptDeleteEndingScreen}
+              handleUpdateTheme={handleUpdateTheme}
+              saving={saving}
+            />
 
 
-          {/* COLUNA CENTRAL: Preview Interativo com seletores Desktop / Tablet / Celular */}
-          <EditorCanvas
-            deviceView={deviceView}
-            setDeviceView={setDeviceView}
-            activeItemType={activeItemType}
-            setActiveItemType={setActiveItemType}
-            form={form}
-            currentQuestion={currentQuestion}
-            currentEndingScreen={currentEndingScreen}
-            selectedQuestionIndex={selectedQuestionIndex}
-            setSelectedQuestionIndex={setSelectedQuestionIndex}
-            editingQuestionTag={editingQuestionTag}
-            setEditingQuestionTag={setEditingQuestionTag}
-            handleUpdateWelcomeScreen={handleUpdateWelcomeScreen}
-            handleUpdateCurrentEndingScreen={handleUpdateCurrentEndingScreen}
-            handleUpdateCurrentQuestion={handleUpdateCurrentQuestion}
-            handleSaveForm={handleSaveForm}
-          />
+            {/* COLUNA CENTRAL: Preview Interativo com seletores Desktop / Tablet / Celular */}
+            <EditorCanvas
+              deviceView={deviceView}
+              setDeviceView={setDeviceView}
+              activeItemType={activeItemType}
+              setActiveItemType={setActiveItemType}
+              form={form}
+              currentQuestion={currentQuestion}
+              currentEndingScreen={currentEndingScreen}
+              selectedQuestionIndex={selectedQuestionIndex}
+              setSelectedQuestionIndex={setSelectedQuestionIndex}
+              editingQuestionTag={editingQuestionTag}
+              setEditingQuestionTag={setEditingQuestionTag}
+              handleUpdateWelcomeScreen={handleUpdateWelcomeScreen}
+              handleUpdateCurrentEndingScreen={handleUpdateCurrentEndingScreen}
+              handleUpdateCurrentQuestion={handleUpdateCurrentQuestion}
+              handleSaveForm={handleSaveForm}
+            />
 
-          {/* COLUNA DIREITA: Painel de Configurações da Questão */}
-          <EditorConfigPanel
-            activeItemType={activeItemType}
-            form={form}
-            currentQuestion={currentQuestion}
-            currentEndingScreen={currentEndingScreen}
-            handleUpdateWelcomeScreen={handleUpdateWelcomeScreen}
-            handleUpdateCurrentEndingScreen={handleUpdateCurrentEndingScreen}
-            handleUpdateCurrentQuestion={handleUpdateCurrentQuestion}
-            handleSaveForm={handleSaveForm}
-            openTypePickerForChange={openTypePickerForChange}
-          />
-        </div>
+            {/* COLUNA DIREITA: Painel de Configurações da Questão */}
+            <EditorConfigPanel
+              activeItemType={activeItemType}
+              form={form}
+              currentQuestion={currentQuestion}
+              currentEndingScreen={currentEndingScreen}
+              handleUpdateWelcomeScreen={handleUpdateWelcomeScreen}
+              handleUpdateCurrentEndingScreen={handleUpdateCurrentEndingScreen}
+              handleUpdateCurrentQuestion={handleUpdateCurrentQuestion}
+              handleSaveForm={handleSaveForm}
+              openTypePickerForChange={openTypePickerForChange}
+            />
+          </div>
+        </>
       )}
 
       {/* Modal para Adicionar ou Trocar Tipo de Questão */}

@@ -11,6 +11,8 @@
 @import './styles/Modals.css';
 @import './styles/Welcome.css';
 @import './styles/AutomatedBackup.css';
+@import './styles/MobileResponsive.css';
+@import './styles/FormEditorMobile.css';
 
 /* Layout Base Global */
 .app-container {

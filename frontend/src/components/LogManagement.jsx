@@ -165,100 +165,98 @@ export default function LogManagement({ currentUser }) {
       />
 
       {/* Barra de Ferramentas / Controles do Log */}
-      <div className="table-card" style={{ marginBottom: '12px' }}>
-        <div className="table-toolbar" style={{ flexWrap: 'wrap', gap: '12px' }}>
+      <div className="table-card log-toolbar-card" style={{ marginBottom: '12px' }}>
+        <div className="table-toolbar log-table-toolbar">
           {/* Busca de texto */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 250px' }}>
+          <div className="log-search-box">
             <Filter size={15} color="#64748b" />
             <input
               type="text"
               placeholder="Filtrar por texto nos logs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '13px',
-              }}
+              className="log-search-input-field"
               data-testid="log-search-input"
             />
           </div>
 
-          {/* Quantidade de Linhas */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label htmlFor="tail-select" style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-              Linhas:
-            </label>
-            <select
-              id="tail-select"
-              value={tailLines}
-              onChange={(e) => setTailLines(Number(e.target.value))}
-              style={{
-                padding: '6px 10px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                fontSize: '13px',
-                fontWeight: 500,
-              }}
-              data-testid="log-tail-select"
-            >
-              <option value={50}>50 linhas</option>
-              <option value={100}>100 linhas</option>
-              <option value={200}>200 linhas</option>
-              <option value={500}>500 linhas</option>
-            </select>
+          <div className="log-toolbar-actions-row">
+            {/* Quantidade de Linhas */}
+            <div className="log-tail-box" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label htmlFor="tail-select" style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                Linhas:
+              </label>
+              <select
+                id="tail-select"
+                value={tailLines}
+                onChange={(e) => setTailLines(Number(e.target.value))}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                }}
+                data-testid="log-tail-select"
+              >
+                <option value={50}>50 linhas</option>
+                <option value={100}>100 linhas</option>
+                <option value={200}>200 linhas</option>
+                <option value={500}>500 linhas</option>
+              </select>
+            </div>
+
+            <div className="log-buttons-wrap">
+              {/* Auto Refresh Toggle */}
+              <button
+                type="button"
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className="pagination-btn"
+                style={autoRefresh ? { backgroundColor: '#dcfce7', borderColor: '#86efac', color: '#166534' } : {}}
+                data-testid="toggle-autorefresh-btn"
+                title="Atualização automática a cada 4s"
+              >
+                <Activity size={15} className={autoRefresh ? 'pulse-icon' : ''} />
+                <span>{autoRefresh ? 'Auto (Ligado)' : 'Auto (Desligado)'}</span>
+              </button>
+
+              {/* Botão Atualizar Manual */}
+              <button
+                type="button"
+                onClick={() => fetchLogs()}
+                disabled={loading}
+                className="pagination-btn"
+                data-testid="refresh-logs-btn"
+              >
+                <RefreshCw size={15} className={loading ? 'spin-animation' : ''} />
+                <span>Atualizar</span>
+              </button>
+
+              {/* Botão Copiar */}
+              <button
+                type="button"
+                onClick={handleCopyLogs}
+                disabled={filteredLogs.length === 0}
+                className="pagination-btn"
+                data-testid="copy-logs-btn"
+              >
+                {copied ? <Check size={15} color="#16a34a" /> : <Copy size={15} />}
+                <span>{copied ? 'Copiado' : 'Copiar'}</span>
+              </button>
+
+              {/* Botão Rolar para o fim */}
+              <button
+                type="button"
+                onClick={scrollToBottom}
+                className="pagination-btn"
+                data-testid="scroll-bottom-btn"
+                title="Rolar para o final do terminal"
+              >
+                <ArrowDown size={15} />
+                <span>Fim</span>
+              </button>
+            </div>
           </div>
-
-          {/* Auto Refresh Toggle */}
-          <button
-            type="button"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className="pagination-btn"
-            style={autoRefresh ? { backgroundColor: '#dcfce7', borderColor: '#86efac', color: '#166534' } : {}}
-            data-testid="toggle-autorefresh-btn"
-            title="Atualização automática a cada 4s"
-          >
-            <Activity size={15} className={autoRefresh ? 'pulse-icon' : ''} />
-            <span>{autoRefresh ? 'Auto (Ligado)' : 'Auto (Desligado)'}</span>
-          </button>
-
-          {/* Botão Atualizar Manual */}
-          <button
-            type="button"
-            onClick={() => fetchLogs()}
-            disabled={loading}
-            className="pagination-btn"
-            data-testid="refresh-logs-btn"
-          >
-            <RefreshCw size={15} className={loading ? 'spin-animation' : ''} />
-            <span>Atualizar</span>
-          </button>
-
-          {/* Botão Copiar */}
-          <button
-            type="button"
-            onClick={handleCopyLogs}
-            disabled={filteredLogs.length === 0}
-            className="pagination-btn"
-            data-testid="copy-logs-btn"
-          >
-            {copied ? <Check size={15} color="#16a34a" /> : <Copy size={15} />}
-            <span>{copied ? 'Copiado' : 'Copiar'}</span>
-          </button>
-
-          {/* Botão Rolar para o fim */}
-          <button
-            type="button"
-            onClick={scrollToBottom}
-            className="pagination-btn"
-            data-testid="scroll-bottom-btn"
-            title="Rolar para o final do terminal"
-          >
-            <ArrowDown size={15} />
-            <span>Fim</span>
-          </button>
         </div>
       </div>
 

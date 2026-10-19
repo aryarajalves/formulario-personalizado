@@ -162,6 +162,50 @@ describe('App Component', () => {
     expect(screen.queryByRole('complementary', { name: /menu lateral/i })).not.toBeInTheDocument();
     expect(screen.getByText('Sua sessão expirou. Por favor, faça login novamente.')).toBeInTheDocument();
   });
+
+  it('renders mobile header and toggles sidebar drawer via hamburger button and backdrop', () => {
+    localStorage.setItem('auth_token', 'mock_token');
+    localStorage.setItem(
+      'auth_user',
+      JSON.stringify({
+        id: 1,
+        name: 'Aryaraj',
+        email: 'aryarajmarketing@gmail.com',
+        role: 'superadmin',
+      })
+    );
+
+    render(
+      <ToastProvider>
+        <App />
+      </ToastProvider>
+    );
+
+    // Header mobile presente
+    const mobileHeader = screen.getByTestId('mobile-header');
+    expect(mobileHeader).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-hamburger-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-user-badge')).toHaveTextContent('A');
+
+    // Inicialmente não tem backdrop
+    expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
+
+    // Clicar no botão hamburger abre o drawer e exibe backdrop
+    const hamburgerBtn = screen.getByTestId('mobile-hamburger-btn');
+    fireEvent.click(hamburgerBtn);
+
+    const backdrop = screen.getByTestId('sidebar-backdrop');
+    expect(backdrop).toBeInTheDocument();
+
+    const sidebar = screen.getByRole('complementary', { name: /menu lateral/i });
+    expect(sidebar).toHaveClass('open');
+
+    // Clicar no backdrop fecha o drawer
+    fireEvent.click(backdrop);
+    expect(screen.queryByTestId('sidebar-backdrop')).not.toBeInTheDocument();
+    expect(sidebar).not.toHaveClass('open');
+  });
 });
+
 
 
