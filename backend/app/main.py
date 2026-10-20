@@ -51,6 +51,13 @@ async def lifespan(app: FastAPI):
     with engine.connect() as conn:
         from sqlalchemy import text
         try:
+            if engine.dialect.name == "postgresql":
+                conn.execute(text("ALTER TABLE forms ADD COLUMN IF NOT EXISTS flows JSON DEFAULT '[]'::json;"))
+            else:
+                try:
+                    conn.execute(text("ALTER TABLE forms ADD COLUMN flows JSON DEFAULT '[]';"))
+                except Exception:
+                    pass
             conn.execute(text("ALTER TABLE invites ADD COLUMN IF NOT EXISTS used_by_email VARCHAR;"))
             conn.execute(text("CREATE INDEX IF NOT EXISTS idx_form_responses_form_status ON form_responses (form_id, status);"))
             conn.execute(text("CREATE INDEX IF NOT EXISTS idx_form_responses_form_created ON form_responses (form_id, created_at);"))
