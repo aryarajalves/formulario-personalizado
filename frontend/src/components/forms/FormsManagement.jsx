@@ -12,9 +12,12 @@ import {
   ArrowUpDown,
   LayoutGrid,
   List,
-  Edit3
+  Edit3,
+  Upload,
+  Download
 } from 'lucide-react';
 import CreateFormModal from './CreateFormModal';
+import ImportFormModal from './ImportFormModal';
 import FormEditor from './FormEditor';
 import { useToast } from '../../context/ToastContext';
 import './FormsManagement.css';
@@ -24,8 +27,10 @@ export default function FormsManagement({ onEditStateChange }) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [exportingId, setExportingId] = useState(null);
   const [deleteConfirmForm, setDeleteConfirmForm] = useState(null);
   const [editingFormId, setEditingFormId] = useState(null);
   const { addToast } = useToast();
@@ -83,6 +88,63 @@ export default function FormsManagement({ onEditStateChange }) {
     setForms((prev) => [newForm, ...prev]);
     addToast('Formulário criado com sucesso!', 'success');
     setEditingFormId(newForm.id);
+  };
+
+  const handleImportForm = async ({ title, data }) => {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch('/api/v1/forms/import', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ title, data }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Erro ao importar o formulário.');
+    }
+
+    const newForm = await response.json();
+    setForms((prev) => [newForm, ...prev]);
+    addToast('Formulário importado com sucesso!', 'success');
+    setEditingFormId(newForm.id);
+  };
+
+  const handleExportForm = async (targetForm) => {
+    try {
+      setExportingId(targetForm.id);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/v1/forms/${targetForm.id}/export`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao exportar formulário.');
+      }
+
+      const data = await response.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTitle = (targetForm.title || 'formulario').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+      a.download = `formulario_${safeTitle}_${targetForm.slug || 'export'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      addToast('Formulário exportado com sucesso!', 'success');
+    } catch (err) {
+      addToast(err.message || 'Erro ao exportar formulário.', 'error');
+    } finally {
+      setExportingId(null);
+      setActiveDropdown(null);
+    }
   };
 
   const handleDeleteForm = async (formId) => {
@@ -151,15 +213,27 @@ export default function FormsManagement({ onEditStateChange }) {
         {/* Top Header */}
         <div className="forms-header">
           <h1 className="forms-title">Todos os formulários</h1>
-          <button
-            type="button"
-            className="create-form-main-btn"
-            onClick={() => setIsModalOpen(true)}
-            data-testid="open-create-form-modal-btn"
-          >
-            <Plus size={18} />
-            <span>Criar formulário</span>
-          </button>
+          <div className="forms-header-actions">
+            <button
+              type="button"
+              className="import-form-btn"
+              onClick={() => setIsImportModalOpen(true)}
+              data-testid="open-import-form-modal-btn"
+              title="Importar formulário a partir de arquivo JSON"
+            >
+              <Upload size={16} />
+              <span>Importar formulário</span>
+            </button>
+            <button
+              type="button"
+              className="create-form-main-btn"
+              onClick={() => setIsModalOpen(true)}
+              data-testid="open-create-form-modal-btn"
+            >
+              <Plus size={18} />
+              <span>Criar formulário</span>
+            </button>
+          </div>
         </div>
 
         {/* Barra de Filtros e Busca */}
@@ -300,6 +374,20 @@ export default function FormsManagement({ onEditStateChange }) {
                         </button>
                         <button
                           type="button"
+                          className="dropdown-export-btn"
+                          onClick={() => handleExportForm(form)}
+                          disabled={exportingId === form.id}
+                          data-testid={`export-form-btn-${form.id}`}
+                        >
+                          {exportingId === form.id ? (
+                            <Loader2 size={14} className="spinner-icon" />
+                          ) : (
+                            <Download size={14} />
+                          )}
+                          <span>Exportar</span>
+                        </button>
+                        <button
+                          type="button"
                           className="dropdown-delete-btn"
                           onClick={() => setDeleteConfirmForm(form)}
                           data-testid={`delete-form-btn-${form.id}`}
@@ -322,6 +410,13 @@ export default function FormsManagement({ onEditStateChange }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreateSuccess={handleCreateForm}
+      />
+
+      {/* Modal de Importação */}
+      <ImportFormModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={handleImportForm}
       />
 
       {/* Modal Centralizado de Confirmação de Deleção com Backdrop Translúcido */}

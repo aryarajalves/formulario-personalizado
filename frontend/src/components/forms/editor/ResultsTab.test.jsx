@@ -265,5 +265,37 @@ describe('ResultsTab Component', () => {
     expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining('aryaraj@gmail.com'));
     expect(mockClose).toHaveBeenCalled();
   });
+
+  it('renders "Concluído (Não passou)" tag for responses marked as CONCLUIDO_NAO_PASSOU', () => {
+    const disqualifiedResponses = [
+      {
+        id: 99,
+        contact_name: 'Lead Desqualificado',
+        contact_email: 'desq@teste.com',
+        contact_phone: '+55 11 98888-1111',
+        status: 'CONCLUIDO_NAO_PASSOU',
+        created_at: '2026-10-20T14:00:00Z',
+        answers: [
+          { question_title: 'Obrigado pelo seu tempo', answer: '(Mensagem de Término)' }
+        ]
+      }
+    ];
+
+    render(
+      <ResultsTab
+        responses={disqualifiedResponses}
+        responsesPage={1}
+        responsesTotal={1}
+        responsesTotalPages={1}
+        loadingResponses={false}
+        setResponsesPage={vi.fn()}
+        onGoToShare={vi.fn()}
+      />
+    );
+
+    const pill = screen.getByTestId('status-disqualified-0');
+    expect(pill).toBeInTheDocument();
+    expect(pill).toHaveTextContent('Concluído (Não passou)');
+  });
 });
 

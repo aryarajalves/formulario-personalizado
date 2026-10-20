@@ -100,6 +100,10 @@ describe('FormEditor Component - Navigation, Questions & Modals', () => {
     const emailOption = screen.getByTestId('question-type-email');
     fireEvent.click(emailOption);
 
+    const saveBtn = screen.getByTestId('editor-save-btn');
+    expect(saveBtn).toBeDefined();
+    fireEvent.click(saveBtn);
+
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/forms/1'),
@@ -281,7 +285,7 @@ describe('FormEditor Component - Navigation, Questions & Modals', () => {
     });
   });
 
-  it('allows editing question title via right config panel and saves on blur', async () => {
+  it('allows editing question title via right config panel and saves when clicking Salvar', async () => {
     global.fetch = vi
       .fn()
       .mockResolvedValueOnce({
@@ -326,6 +330,10 @@ describe('FormEditor Component - Navigation, Questions & Modals', () => {
 
     fireEvent.change(titleInput, { target: { value: 'Por favor, informe seu melhor e-mail comercial' } });
     fireEvent.blur(titleInput);
+
+    // Clica no botão Salvar
+    const saveBtn = screen.getByTestId('editor-save-btn');
+    fireEvent.click(saveBtn);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
@@ -386,6 +394,10 @@ describe('FormEditor Component - Navigation, Questions & Modals', () => {
     expect(presetNeon).toBeDefined();
     fireEvent.click(presetNeon);
 
+    // Clica no botão Salvar
+    const saveBtn = screen.getByTestId('editor-save-btn');
+    fireEvent.click(saveBtn);
+
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/forms/1'),
@@ -436,6 +448,71 @@ describe('FormEditor Component - Navigation, Questions & Modals', () => {
     const questionsBtn = screen.getByTestId('mobile-subnav-questions');
     fireEvent.click(questionsBtn);
     expect(workspace).toHaveClass('mobile-view-questions');
+  });
+
+  it('does not auto-save on change and saves only when clicking the manual Salvar button', async () => {
+    let putCalled = false;
+    global.fetch = vi.fn().mockImplementation((url, options) => {
+      if (options?.method === 'PUT') {
+        putCalled = true;
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            id: 1,
+            title: 'Formulário Sem AutoSave',
+            slug: 'form-manual-save',
+            status: 'PUBLICADO',
+            questions: [{ id: 'q1', type: 'short_text', title: 'Título Modificado' }],
+            ending_screens: []
+          })
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          title: 'Formulário Sem AutoSave',
+          slug: 'form-manual-save',
+          status: 'PUBLICADO',
+          questions: [{ id: 'q1', type: 'short_text', title: 'Título Original' }],
+          ending_screens: []
+        })
+      });
+    });
+
+    render(
+      <ToastProvider>
+        <FormEditor formId={1} onBack={() => {}} />
+      </ToastProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('config-question-title-input')).toBeDefined();
+    });
+
+    const titleInput = screen.getByTestId('config-question-title-input');
+    const saveBtn = screen.getByTestId('editor-save-btn');
+
+    // Inicialmente não tem classe has-changes
+    expect(saveBtn).not.toHaveClass('has-changes');
+
+    // Altera o título no input
+    fireEvent.change(titleInput, { target: { value: 'Título Modificado' } });
+    fireEvent.blur(titleInput);
+
+    // NÃO deve ter disparado PUT automaticamente
+    expect(putCalled).toBe(false);
+
+    // O botão Salvar deve sinalizar alterações pendentes
+    expect(saveBtn).toHaveClass('has-changes');
+
+    // Clica no botão Salvar
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(putCalled).toBe(true);
+      expect(saveBtn).not.toHaveClass('has-changes');
+    });
   });
 });
 

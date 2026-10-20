@@ -16,7 +16,8 @@ import {
   BarChart2, 
   Award, 
   Grid,
-  CalendarCheck
+  CalendarCheck,
+  AlertCircle
 } from 'lucide-react';
 import './QuestionTypePickerModal.css';
 
@@ -38,6 +39,17 @@ export const QUESTION_TYPES = [
   { id: 'long_text', category: 'TEXTO E NÚMERO', label: 'Texto Longo', icon: FileText, defaultTitle: 'Conte brevemente sobre o seu caso' },
   { id: 'number', category: 'TEXTO E NÚMERO', label: 'Número', icon: Hash, defaultTitle: 'Informe um valor numérico' },
 
+  // ESTRUTURA & TÉRMINO
+  { 
+    id: 'statement', 
+    category: 'ESTRUTURA & TÉRMINO', 
+    label: 'Mensagem de Término / Desqualificação', 
+    icon: AlertCircle, 
+    defaultTitle: 'Obrigado pelo seu tempo',
+    defaultPlaceholder: 'Infelizmente você não atende aos requisitos desta etapa no momento.',
+    buttonText: 'Finalizar'
+  },
+
   // AVALIAÇÃO E ESCALAS
   { id: 'rating', category: 'AVALIAÇÃO E ESCALAS', label: 'Avaliação', icon: Star, defaultTitle: 'Como você avalia nosso atendimento?' },
 
@@ -56,16 +68,16 @@ export default function QuestionTypePickerModal({ isOpen, onClose, onSelectType 
     'ESCOLHAS',
     'INFORMAÇÕES DE CONTATO',
     'TEXTO E NÚMERO',
+    'ESTRUTURA & TÉRMINO',
     'AVALIAÇÃO E ESCALAS',
     'ARQUIVO',
     'INTEGRAÇÕES',
   ];
 
   return (
-    <div className="type-picker-overlay" onClick={onClose} data-testid="question-type-picker-overlay">
+    <div className="type-picker-overlay" data-testid="question-type-picker-overlay">
       <div 
         className="type-picker-card" 
-        onClick={(e) => e.stopPropagation()} 
         data-testid="question-type-picker-card"
       >
         <div className="type-picker-header">

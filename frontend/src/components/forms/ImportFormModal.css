@@ -1,0 +1,252 @@
+/* Overlay translúcido escuro cobrindo o fundo */
+.import-form-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: importModalFadeIn 0.2s ease-out;
+}
+
+@keyframes importModalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Card centralizado */
+.import-form-modal-card {
+  position: relative;
+  background: #ffffff;
+  color: #111827;
+  width: 90%;
+  max-width: 580px;
+  border-radius: 16px;
+  padding: 40px 36px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Botão Fechar no canto superior direito */
+.import-form-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.import-form-close-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+/* Conteúdo */
+.import-form-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.import-form-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.import-form-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+/* Área de Dropzone */
+.import-dropzone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.import-dropzone:hover,
+.import-dropzone.dragging {
+  border-color: #6366f1;
+  background: #f5f3ff;
+}
+
+.import-dropzone.has-file {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.import-file-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-icon {
+  color: #6366f1;
+}
+
+.drop-main-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.drop-sub-text {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.import-file-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-success-icon {
+  color: #10b981;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #065f46;
+}
+
+.file-hint {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* Prévia e Título */
+.import-preview-box {
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.import-title-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.import-title-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.import-title-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.import-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.import-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+/* Erro */
+.import-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #dc2626;
+  font-size: 13px;
+  background: #fef2f2;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+/* Ações */
+.import-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.import-form-submit-btn {
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.import-form-submit-btn:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.import-form-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

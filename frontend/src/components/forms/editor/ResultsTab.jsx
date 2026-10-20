@@ -13,7 +13,8 @@ import {
   Clock, 
   Download,
   Filter,
-  Printer
+  Printer,
+  AlertCircle
 } from 'lucide-react';
 import { printLeadPdf } from '../../../utils/pdfExport';
 
@@ -221,7 +222,11 @@ export default function ResultsTab({
                           )}
                         </td>
                         <td className="col-status">
-                          {isCompleted ? (
+                          {resp.status === 'CONCLUIDO_NAO_PASSOU' ? (
+                            <span className="status-pill-disqualified" title="Formulário concluído no nó de término (Não passou)" data-testid={`status-disqualified-${idx}`}>
+                              <AlertCircle size={12} /> Concluído (Não passou)
+                            </span>
+                          ) : isCompleted ? (
                             <span className="status-pill-completed" title="Formulário respondido até o final">
                               <CheckCircle2 size={12} /> Concluído (100%)
                             </span>
@@ -327,7 +332,11 @@ export default function ResultsTab({
             <div className="response-modal-header">
               <div className="response-modal-title-box">
                 <div className="response-modal-badge">
-                  {selectedResponse.status === 'CONCLUIDO' ? (
+                  {selectedResponse.status === 'CONCLUIDO_NAO_PASSOU' ? (
+                    <span className="status-pill-disqualified">
+                      <AlertCircle size={13} /> Concluído (Não passou)
+                    </span>
+                  ) : selectedResponse.status === 'CONCLUIDO' ? (
                     <span className="status-pill-completed">
                       <CheckCircle2 size={13} /> Concluído (100%)
                     </span>

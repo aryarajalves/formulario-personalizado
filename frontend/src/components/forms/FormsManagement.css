@@ -6,86 +6,6 @@
   width: 100%;
 }
 
-/* Sub-Menu Lateral (Workspace & Pastas) */
-.forms-sidebar {
-  width: 240px;
-  background: #f1f5f9;
-  border-right: 1px solid #e2e8f0;
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.workspace-selector {
-  background: #ffffff;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  font-weight: 600;
-  font-size: 14px;
-  color: #1e293b;
-}
-
-.folders-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.folders-header-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #64748b;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
-  padding-left: 8px;
-}
-
-.folder-item {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: #475569;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s ease;
-}
-
-.folder-item:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.folder-item.active {
-  background: #e2e8f0;
-  color: #0f172a;
-  font-weight: 600;
-}
-
-.new-folder-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 6px;
-  background: transparent;
-  color: #64748b;
-  font-size: 12px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-
-.new-folder-btn:hover {
-  border-color: #94a3b8;
-  color: #334155;
-}
 
 /* Área de Conteúdo Principal */
 .forms-content-area {
@@ -126,6 +46,32 @@
 
 .create-form-main-btn:hover {
   background: #1e293b;
+}
+
+.forms-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.import-form-btn {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.import-form-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
 }
 
 /* Filtro e Busca */
@@ -338,7 +284,8 @@
   min-width: 120px;
 }
 
-.dropdown-edit-btn {
+.dropdown-edit-btn,
+.dropdown-export-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -353,7 +300,8 @@
   text-align: left;
 }
 
-.dropdown-edit-btn:hover {
+.dropdown-edit-btn:hover,
+.dropdown-export-btn:hover {
   background: #f1f5f9;
 }
 

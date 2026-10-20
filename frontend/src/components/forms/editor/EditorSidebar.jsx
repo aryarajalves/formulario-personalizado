@@ -1,6 +1,8 @@
 import React from 'react';
-import { Hand, Trash2, Plus, Star, ExternalLink } from 'lucide-react';
+import { Hand, Trash2, Plus, ExternalLink } from 'lucide-react';
 import DesignThemePanel from './DesignThemePanel';
+import FlowBranchSection from './FlowBranchSection';
+import './EditorSidebar.css';
 
 export default function EditorSidebar({
   activeTab,
@@ -13,12 +15,17 @@ export default function EditorSidebar({
   selectedEndingIndex,
   setSelectedEndingIndex,
   handleToggleWelcomeScreen,
+  promptDeleteWelcomeScreen,
   openTypePickerForAdd,
   promptDeleteQuestion,
+  handleMoveQuestion,
   handleAddEndingScreen,
   promptDeleteEndingScreen,
   handleUpdateTheme,
-  saving
+  saving,
+  handleAddFlow,
+  handleRenameFlow,
+  promptDeleteFlow
 }) {
   return (
     <aside className="editor-left-panel">
@@ -49,148 +56,112 @@ export default function EditorSidebar({
         <div className="questions-sidebar-content">
           {/* SEÇÃO TELA DE BOAS VINDAS */}
           <div className="welcome-screen-sidebar-group">
-
-          <span className="sidebar-group-title">TELA DE BOAS VINDAS</span>
-          {form?.welcome_screen?.enabled ? (
-            <div
-              className={`question-nav-item welcome-nav-item ${activeItemType === 'welcome_screen' ? 'active' : ''}`}
-              onClick={() => setActiveItemType('welcome_screen')}
-              data-testid="welcome-screen-nav-item"
-            >
-              <div className="welcome-screen-badge-icon">
-                <Hand size={14} />
+            <span className="sidebar-group-title">TELA DE BOAS VINDAS</span>
+            {form?.welcome_screen?.enabled ? (
+              <div
+                className={`question-nav-item welcome-nav-item ${activeItemType === 'welcome_screen' ? 'active' : ''}`}
+                onClick={() => setActiveItemType('welcome_screen')}
+                data-testid="welcome-screen-nav-item"
+              >
+                <div className="welcome-screen-badge-icon">
+                  <Hand size={14} />
+                </div>
+                <span className="question-nav-label">
+                  {form?.welcome_screen?.title || 'Tela de boas vindas'}
+                </span>
+                <button
+                  type="button"
+                  className="delete-question-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (promptDeleteWelcomeScreen) {
+                      promptDeleteWelcomeScreen();
+                    } else {
+                      handleToggleWelcomeScreen(false);
+                    }
+                  }}
+                  title="Excluir tela de boas-vindas"
+                  data-testid="remove-welcome-screen-btn"
+                >
+                  <Trash2 size={13} />
+                </button>
               </div>
-              <span className="question-nav-label">
-                {form?.welcome_screen?.title || 'Tela de boas vindas'}
-              </span>
+            ) : (
               <button
                 type="button"
-                className="delete-question-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleWelcomeScreen(false);
-                }}
-                title="Desativar tela de boas-vindas"
-                data-testid="remove-welcome-screen-btn"
+                className="add-question-dashed-btn add-welcome-btn"
+                onClick={() => handleToggleWelcomeScreen(true)}
+                data-testid="add-welcome-screen-btn"
               >
-                <Trash2 size={13} />
+                <Plus size={14} /> Ativar tela de boas-vindas
               </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="add-question-dashed-btn add-welcome-btn"
-              onClick={() => handleToggleWelcomeScreen(true)}
-              data-testid="add-welcome-screen-btn"
-            >
-              <Plus size={14} /> Ativar tela de boas-vindas
-            </button>
-          )}
-        </div>
-
-        <span className="sidebar-group-title" style={{ marginTop: '16px' }}>QUESTÕES</span>
-
-        <div className="questions-nav-list" data-testid="questions-list">
-          {form?.questions?.map((q, idx) => (
-            <div
-              key={q.id || idx}
-              className={`question-nav-item ${activeItemType === 'question' && selectedQuestionIndex === idx ? 'active' : ''}`}
-              onClick={() => {
-                setActiveItemType('question');
-                setSelectedQuestionIndex(idx);
-              }}
-              data-testid={`question-item-${idx}`}
-            >
-              <span className="question-idx-badge">{idx + 1}</span>
-
-              <span className="question-nav-label" title={q.title || `Questão ${idx + 1}`}>
-                {q.title || `Questão ${idx + 1}`}
-              </span>
-
-              {q.required && (
-                <Star 
-                  size={13} 
-                  className="question-required-star-icon" 
-                  fill="#eab308" 
-                  color="#eab308" 
-                  data-testid={`required-star-${idx}`}
-                  title="Obrigatória"
-                />
-              )}
-              
-              {form.questions.length > 1 && (
-                <button
-                  type="button"
-                  className="delete-question-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    promptDeleteQuestion(idx);
-                  }}
-                  title="Excluir questão"
-                  data-testid={`delete-question-btn-${idx}`}
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* BOTÃO ADICIONAR QUESTÃO */}
-        <button
-          type="button"
-          className="add-question-dashed-btn"
-          onClick={openTypePickerForAdd}
-          data-testid="add-question-btn"
-        >
-          <Plus size={15} /> Adicionar questão
-        </button>
-
-        {/* SEÇÃO TELAS FINAIS */}
-        <div className="ending-screens-section">
-          <span className="sidebar-group-title">TELAS FINAIS</span>
-          <div className="questions-nav-list" data-testid="ending-screens-list">
-            {(form?.ending_screens || []).map((screen, idx) => (
-              <div
-                key={screen.id || idx}
-                className={`question-nav-item ending-nav-item ${activeItemType === 'ending_screen' && selectedEndingIndex === idx ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveItemType('ending_screen');
-                  setSelectedEndingIndex(idx);
-                }}
-                data-testid={`ending-item-${idx}`}
-              >
-                <div className="ending-screen-badge-icon">
-                  <ExternalLink size={13} />
-                </div>
-                <span className="question-nav-label">{screen.title || 'Tela final'}</span>
-                
-                <button
-                  type="button"
-                  className="delete-question-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    promptDeleteEndingScreen(idx);
-                  }}
-                  title="Excluir tela final"
-                  data-testid={`delete-ending-btn-${idx}`}
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            ))}
+            )}
           </div>
 
-          <button
-            type="button"
-            className="add-question-dashed-btn add-ending-btn"
-            onClick={handleAddEndingScreen}
-            data-testid="add-ending-screen-btn"
-          >
-            <Plus size={15} /> Adicionar tela final
-          </button>
+          {/* SEÇÃO DE FLUXOS E RAMIFICAÇÕES */}
+          <span className="sidebar-group-title" style={{ marginTop: '16px' }}>FLUXOS E QUESTÕES</span>
+
+          <FlowBranchSection
+            form={form}
+            activeItemType={activeItemType}
+            setActiveItemType={setActiveItemType}
+            selectedQuestionIndex={selectedQuestionIndex}
+            setSelectedQuestionIndex={setSelectedQuestionIndex}
+            openTypePickerForAdd={openTypePickerForAdd}
+            promptDeleteQuestion={promptDeleteQuestion}
+            handleMoveQuestion={handleMoveQuestion}
+            handleAddFlow={handleAddFlow}
+            handleRenameFlow={handleRenameFlow}
+            promptDeleteFlow={promptDeleteFlow}
+          />
+
+          {/* SEÇÃO TELAS FINAIS */}
+          <div className="ending-screens-section">
+            <span className="sidebar-group-title">TELAS FINAIS</span>
+            <div className="questions-nav-list" data-testid="ending-screens-list">
+              {(form?.ending_screens || []).map((screen, idx) => (
+                <div
+                  key={screen.id || idx}
+                  className={`question-nav-item ending-nav-item ${activeItemType === 'ending_screen' && selectedEndingIndex === idx ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveItemType('ending_screen');
+                    setSelectedEndingIndex(idx);
+                  }}
+                  data-testid={`ending-item-${idx}`}
+                >
+                  <div className="ending-screen-badge-icon">
+                    <ExternalLink size={13} />
+                  </div>
+                  <span className="question-nav-label">{screen.title || 'Tela final'}</span>
+                  
+                  <button
+                    type="button"
+                    className="delete-question-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      promptDeleteEndingScreen(idx);
+                    }}
+                    title="Excluir tela final"
+                    data-testid={`delete-ending-btn-${idx}`}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {(!form?.ending_screens || form.ending_screens.length === 0) && (
+              <button
+                type="button"
+                className="add-question-dashed-btn add-ending-btn"
+                onClick={handleAddEndingScreen}
+                data-testid="add-ending-screen-btn"
+              >
+                <Plus size={15} /> Adicionar tela final
+              </button>
+            )}
+          </div>
         </div>
-      </div>
       )}
     </aside>
   );

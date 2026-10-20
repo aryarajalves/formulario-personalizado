@@ -14,7 +14,7 @@ from app.core.database import get_db
 from app.api.v1.endpoints.users import get_current_user
 from app.models.user import User
 from app.models.form import Form, FormResponseData, WebhookDeliveryLog
-from app.schemas.form import FormCreate, FormResponse, FormUpdate
+from app.schemas.form import FormCreate, FormResponse, FormUpdate, FormExportResponse, FormImportRequest
 from app.core.logger import logger
 from app.core.config import settings
 from app.core.rate_limiter import rate_limiter
@@ -71,12 +71,77 @@ def create_form(
         responses_count=0,
         completion_rate=0.0,
         questions=form_in.questions or [],
+        flows=form_in.flows or [],
+        welcome_screen=form_in.welcome_screen or {},
+        ending_screens=(form_in.ending_screens or [])[:1],
+        theme=form_in.theme or {},
         user_id=current_user.id
     )
     db.add(new_form)
     db.commit()
     db.refresh(new_form)
     logger.info(f"Formulário '{title}' criado com sucesso com ID {new_form.id} e slug {slug}")
+    return new_form
+
+@router.post("/import", response_model=FormResponse, status_code=status.HTTP_201_CREATED)
+def import_form(
+    import_in: FormImportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Importa um formulário a partir de uma estrutura JSON exportada anteriormente."""
+    payload = import_in.data if isinstance(import_in.data, dict) and import_in.data else import_in.model_dump()
+
+    raw_title = import_in.title or payload.get("title")
+    title = (raw_title or "Formulário Importado").strip()
+    if not title:
+        title = "Formulário Importado"
+
+    questions = payload.get("questions")
+    if not isinstance(questions, list):
+        questions = []
+
+    flows = payload.get("flows")
+    if not isinstance(flows, list):
+        flows = []
+
+    welcome_screen = payload.get("welcome_screen")
+    if not isinstance(welcome_screen, dict):
+        welcome_screen = {}
+
+    ending_screens = (payload.get("ending_screens") or [])[:1]
+
+    theme = payload.get("theme")
+    if not isinstance(theme, dict):
+        theme = {}
+
+    webhook_url = payload.get("webhook_url")
+    if webhook_url:
+        webhook_url = str(webhook_url).strip()
+        is_safe, _ = is_ssrf_safe_url(webhook_url)
+        if not is_safe:
+            logger.warning(f"Webhook URL insegura ignorada na importação para {current_user.email}: {webhook_url}")
+            webhook_url = None
+
+    slug = generate_unique_slug(db)
+    new_form = Form(
+        title=title,
+        slug=slug,
+        status="PUBLICADO",
+        responses_count=0,
+        completion_rate=0.0,
+        questions=questions,
+        flows=flows,
+        welcome_screen=welcome_screen,
+        ending_screens=ending_screens,
+        theme=theme,
+        webhook_url=webhook_url,
+        user_id=current_user.id
+    )
+    db.add(new_form)
+    db.commit()
+    db.refresh(new_form)
+    logger.info(f"Formulário '{title}' importado com sucesso (ID {new_form.id}) para o usuário {current_user.email}")
     return new_form
 
 @router.get("/{form_id}", response_model=FormResponse)
@@ -90,6 +155,32 @@ def get_form(
     if not form:
         raise HTTPException(status_code=404, detail="Formulário não encontrado.")
     return form
+
+@router.get("/{form_id}/export", response_model=FormExportResponse)
+def export_form(
+    form_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Exporta a estrutura do formulário (perguntas, telas, tema e configurações) em formato JSON."""
+    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Formulário não encontrado.")
+
+    logger.info(f"Exportando estrutura do formulário '{form.title}' (ID {form.id}) para {current_user.email}")
+    return FormExportResponse(
+        version="1.0",
+        type="formulario_personalizado_export",
+        exported_at=datetime.now(timezone.utc).isoformat(),
+        title=form.title,
+        status=form.status,
+        theme=form.theme or {},
+        welcome_screen=form.welcome_screen or {},
+        questions=form.questions or [],
+        flows=form.flows or [],
+        ending_screens=form.ending_screens or [],
+        webhook_url=form.webhook_url
+    )
 
 @router.put("/{form_id}", response_model=FormResponse)
 def update_form(
@@ -115,11 +206,14 @@ def update_form(
     if form_in.questions is not None:
         form.questions = form_in.questions
 
+    if form_in.flows is not None:
+        form.flows = form_in.flows
+
     if form_in.welcome_screen is not None:
         form.welcome_screen = form_in.welcome_screen
 
     if form_in.ending_screens is not None:
-        form.ending_screens = form_in.ending_screens
+        form.ending_screens = form_in.ending_screens[:1]
 
     if form_in.theme is not None:
         form.theme = form_in.theme
@@ -330,6 +424,7 @@ def get_public_form(slug: str, db: Session = Depends(get_db)):
         "slug": form.slug,
         "status": form.status,
         "questions": form.questions or [],
+        "flows": form.flows or [],
         "welcome_screen": form.welcome_screen or {},
         "ending_screens": form.ending_screens or [],
         "theme": form.theme or {}
@@ -501,6 +596,9 @@ def submit_public_form(
         if first_ans and not "@" in first_ans:
             contact_name = first_ans
 
+    disqualified = bool(answers_payload.get("disqualified") or answers_payload.get("passed") is False)
+    final_status = "CONCLUIDO_NAO_PASSOU" if disqualified else "CONCLUIDO"
+
     response_record = None
     if response_id:
         response_record = db.query(FormResponseData).filter(
@@ -513,7 +611,7 @@ def submit_public_form(
         response_record.contact_email = contact_email or response_record.contact_email
         response_record.contact_phone = contact_phone or response_record.contact_phone
         response_record.answers = answers
-        response_record.status = "CONCLUIDO"
+        response_record.status = final_status
         response_record.completion_percent = 100.0
     else:
         response_record = FormResponseData(
@@ -522,7 +620,7 @@ def submit_public_form(
             contact_email=contact_email,
             contact_phone=contact_phone,
             answers=answers,
-            status="CONCLUIDO",
+            status=final_status,
             completion_percent=100.0
         )
         db.add(response_record)
@@ -534,7 +632,7 @@ def submit_public_form(
     # Otimização de alta performance: agregação única compatível com PostgreSQL e SQLite
     stats = db.query(
         func.count(FormResponseData.id).label("total"),
-        func.coalesce(func.sum(case((FormResponseData.status == "CONCLUIDO", 1), else_=0)), 0).label("completed")
+        func.coalesce(func.sum(case((FormResponseData.status.in_(["CONCLUIDO", "CONCLUIDO_NAO_PASSOU"]), 1), else_=0)), 0).label("completed")
     ).filter(FormResponseData.form_id == form.id).first()
 
     total_resp = stats.total if stats and stats.total is not None else 1
@@ -593,15 +691,19 @@ def get_form_responses(
     total_all = query.count()
     total_completed = db.query(FormResponseData).filter(
         FormResponseData.form_id == form_id,
-        FormResponseData.status == "CONCLUIDO"
+        FormResponseData.status.in_(["CONCLUIDO", "CONCLUIDO_NAO_PASSOU"])
     ).count()
     total_partial = db.query(FormResponseData).filter(
         FormResponseData.form_id == form_id,
         FormResponseData.status == "PARCIAL"
     ).count()
 
-    if status_filter and status_filter.upper() in ["CONCLUIDO", "PARCIAL"]:
-        query = query.filter(FormResponseData.status == status_filter.upper())
+    if status_filter:
+        s_upper = status_filter.upper()
+        if s_upper == "CONCLUIDO":
+            query = query.filter(FormResponseData.status.in_(["CONCLUIDO", "CONCLUIDO_NAO_PASSOU"]))
+        elif s_upper in ["PARCIAL", "CONCLUIDO_NAO_PASSOU"]:
+            query = query.filter(FormResponseData.status == s_upper)
 
     filtered_total = query.count()
     offset = (page - 1) * limit
@@ -663,8 +765,12 @@ def export_form_responses_csv(
         raise HTTPException(status_code=404, detail="Formulário não encontrado.")
 
     query = db.query(FormResponseData).filter(FormResponseData.form_id == form_id)
-    if status_filter and status_filter.upper() in ["CONCLUIDO", "PARCIAL"]:
-        query = query.filter(FormResponseData.status == status_filter.upper())
+    if status_filter:
+        s_upper = status_filter.upper()
+        if s_upper == "CONCLUIDO":
+            query = query.filter(FormResponseData.status.in_(["CONCLUIDO", "CONCLUIDO_NAO_PASSOU"]))
+        elif s_upper in ["PARCIAL", "CONCLUIDO_NAO_PASSOU"]:
+            query = query.filter(FormResponseData.status == s_upper)
 
     responses = query.order_by(FormResponseData.created_at.desc()).all()
 
@@ -705,12 +811,13 @@ def export_form_responses_csv(
             val = answers_map.get(q_id) or answers_map.get(q_title) or ""
             answers_cols.append(val)
 
+        status_display = "Concluído (Não passou)" if r.status == "CONCLUIDO_NAO_PASSOU" else ("Concluído" if r.status == "CONCLUIDO" else "Parcial")
         row = [
             r.id,
             r.contact_name or "Anônimo",
             r.contact_email or "",
             r.contact_phone or "",
-            "Concluído" if (r.status == "CONCLUIDO") else "Parcial",
+            status_display,
             f"{r.completion_percent:.0f}%" if r.completion_percent is not None else "100%",
             created_str
         ] + answers_cols

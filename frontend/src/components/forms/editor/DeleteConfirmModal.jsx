@@ -33,7 +33,11 @@ export default function DeleteConfirmModal({
         </div>
 
         <h3 id="confirm-delete-modal-title" className="confirm-delete-title" data-testid="confirm-delete-title">
-          {deleteConfirm.type === 'question' ? 'Excluir Questão' : 'Excluir Tela Final'}
+          {deleteConfirm.type === 'question'
+            ? 'Excluir Questão'
+            : deleteConfirm.type === 'welcome_screen'
+            ? 'Excluir Tela de Boas-Vindas'
+            : 'Excluir Tela Final'}
         </h3>
 
         <p className="confirm-delete-message" data-testid="confirm-delete-message">

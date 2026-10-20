@@ -1,7 +1,8 @@
 import React from 'react';
 import { RefreshCw, ChevronDown } from 'lucide-react';
 import { QUESTION_TYPES } from '../QuestionTypePickerModal';
-import LogicJumpConfig from './LogicJumpConfig';
+import QuestionOptionsConfig from './QuestionOptionsConfig';
+import { CHOICE_QUESTION_TYPES, normalizeFormFlows } from '../../../utils/logicJump';
 
 export default function EditorConfigPanel({
   activeItemType,
@@ -34,7 +35,6 @@ export default function EditorConfigPanel({
                 type="text"
                 value={form?.welcome_screen?.button_text || ''}
                 onChange={(e) => handleUpdateWelcomeScreen('button_text', e.target.value)}
-                onBlur={() => handleSaveForm()}
                 className="config-text-input"
                 placeholder="Ex: COMEÇAR FORMULÁRIO"
                 data-testid="welcome-button-text-input"
@@ -61,7 +61,6 @@ export default function EditorConfigPanel({
                 type="text"
                 value={currentEndingScreen?.button_text || ''}
                 onChange={(e) => handleUpdateCurrentEndingScreen('button_text', e.target.value)}
-                onBlur={() => handleSaveForm(null, null, undefined, undefined, form?.ending_screens)}
                 className="config-text-input"
                 placeholder="Ex: Acessar nosso site"
                 data-testid="ending-button-text-input"
@@ -74,7 +73,6 @@ export default function EditorConfigPanel({
                 type="url"
                 value={currentEndingScreen?.button_url || ''}
                 onChange={(e) => handleUpdateCurrentEndingScreen('button_url', e.target.value)}
-                onBlur={() => handleSaveForm(null, null, undefined, undefined, form?.ending_screens)}
                 className="config-text-input"
                 placeholder="https://seusite.com.br/obrigado"
                 data-testid="ending-button-url-input"
@@ -120,52 +118,99 @@ export default function EditorConfigPanel({
               />
             </div>
 
-            <div className="config-section-title">CONFIGURAÇÕES</div>
-
-            <div className="config-toggle-row">
-              <span>Resposta obrigatória</span>
-              <input
-                type="checkbox"
-                checked={!!currentQuestion?.required}
+            <div className="config-form-group">
+              <label>Ramificação / Fluxo</label>
+              <select
+                className="config-text-input"
+                value={currentQuestion?.flow_id || 'default'}
                 onChange={(e) => {
-                  handleUpdateCurrentQuestion('required', e.target.checked, true);
+                  handleUpdateCurrentQuestion('flow_id', e.target.value);
                 }}
-                data-testid="question-required-checkbox"
-              />
+                data-testid="question-flow-select"
+              >
+                {normalizeFormFlows(form?.flows).map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
             </div>
 
+            <div className="config-section-title">CONFIGURAÇÕES</div>
+
+            {currentQuestion?.type !== 'statement' && (
+              <div className="config-toggle-row">
+                <span>Resposta obrigatória</span>
+                <input
+                  type="checkbox"
+                  checked={!!currentQuestion?.required}
+                  onChange={(e) => {
+                    handleUpdateCurrentQuestion('required', e.target.checked);
+                  }}
+                  data-testid="question-required-checkbox"
+                />
+              </div>
+            )}
+
             <div className="config-form-group" style={{ marginTop: '16px' }}>
-              <label>Título da Pergunta</label>
+              <label>{currentQuestion?.type === 'statement' ? 'Título da Mensagem' : 'Título da Pergunta'}</label>
               <input
                 type="text"
                 value={currentQuestion?.title || ''}
                 onChange={(e) => handleUpdateCurrentQuestion('title', e.target.value)}
-                onBlur={() => handleSaveForm(form?.questions)}
                 className="config-text-input"
-                placeholder="Ex: Qual é o seu e-mail?"
+                placeholder={currentQuestion?.type === 'statement' ? 'Ex: Obrigado pelo seu tempo' : 'Ex: Qual é o seu e-mail?'}
                 data-testid="config-question-title-input"
               />
             </div>
 
             <div className="config-form-group" style={{ marginTop: '16px' }}>
-              <label>Placeholder / Dica</label>
-              <input
-                type="text"
-                value={currentQuestion?.placeholder || ''}
-                onChange={(e) => handleUpdateCurrentQuestion('placeholder', e.target.value)}
-                onBlur={() => handleSaveForm(form?.questions)}
-                className="config-text-input"
-                placeholder="Ex: Digite seu telefone..."
-              />
+              <label>{currentQuestion?.type === 'statement' ? 'Texto da Mensagem' : 'Placeholder / Dica'}</label>
+              {currentQuestion?.type === 'statement' ? (
+                <textarea
+                  value={currentQuestion?.description || currentQuestion?.placeholder || ''}
+                  onChange={(e) => {
+                    handleUpdateCurrentQuestion('description', e.target.value);
+                    handleUpdateCurrentQuestion('placeholder', e.target.value);
+                  }}
+                  className="config-text-input"
+                  style={{ minHeight: '80px', resize: 'vertical' }}
+                  placeholder="Escreva a mensagem exibida na tela ao usuário..."
+                  data-testid="config-statement-description-input"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={currentQuestion?.placeholder || ''}
+                  onChange={(e) => handleUpdateCurrentQuestion('placeholder', e.target.value)}
+                  className="config-text-input"
+                  placeholder="Ex: Digite seu telefone..."
+                />
+              )}
             </div>
 
-            <LogicJumpConfig
-              currentQuestion={currentQuestion}
-              allQuestions={form?.questions || []}
-              onUpdateLogicJump={(newLogic) => {
-                handleUpdateCurrentQuestion('logic_jump', newLogic, true);
-              }}
-            />
+            {currentQuestion?.type === 'statement' && (
+              <div className="config-form-group" style={{ marginTop: '16px' }}>
+                <label>Texto do Botão de Término</label>
+                <input
+                  type="text"
+                  value={currentQuestion?.button_text || 'Finalizar'}
+                  onChange={(e) => handleUpdateCurrentQuestion('button_text', e.target.value)}
+                  className="config-text-input"
+                  placeholder="Ex: Finalizar"
+                  data-testid="config-statement-btn-input"
+                />
+              </div>
+            )}
+
+            {CHOICE_QUESTION_TYPES.includes(currentQuestion?.type) && (
+              <QuestionOptionsConfig
+                currentQuestion={currentQuestion}
+                allQuestions={form?.questions || []}
+                flows={form?.flows || []}
+                onUpdateOptions={(newOptions) => {
+                  handleUpdateCurrentQuestion('options', newOptions);
+                }}
+              />
+            )}
           </>
         )}
       </div>

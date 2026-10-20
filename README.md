@@ -10,6 +10,9 @@ A solução oferece uma experiência intuitiva no estilo *Typeform* com transiç
 
 ### 🎨 Criador & Editor de Formulários (Form Builder)
 - **Editor Visual Interativo:** Criação fluida com tela de boas-vindas (*Welcome Screen*), tela de perguntas modulares e tela de finalização (*Ending Screen*).
+- **Importação & Exportação em JSON:** Backup e portabilidade completa de formulários entre instâncias e contas com validação de esquema.
+- **Ramificações & Múltiplos Fluxos (Branching):** Organização em blocos de fluxos (*Fluxo Principal, Ramificação B, C, etc.*), com suporte a saltos direcionados entre ramificações e perguntas.
+- **Salvamento Sob Demanda:** Botão manual "Salvar" na barra superior com indicador de alterações pendentes (pulse dot), eliminando salvamentos automáticos concorrentes e excesso de notificações.
 - **Responsividade Mobile Completa:**
   - Alternador móvel inteligente entre painéis (`Questões`, `Preview`, `Configuração`);
   - Navegação superior em grid de 4 colunas acessível (`Editar`, `Integrar`, `Compartilhar`, `Resultados`);
@@ -17,9 +20,10 @@ A solução oferece uma experiência intuitiva no estilo *Typeform* com transiç
   - Sidebar retrátil (Drawer) com backdrop translúcido e fechamento seguro.
 - **Tipos Diversificados de Pergunta:**
   - 📝 **Texto Curto / Texto Longo (Parágrafo)**;
-  - 🔘 **Múltipla Escolha & Caixa de Seleção**;
-  - ✉️ **E-mail & Telefone/WhatsApp** (com validações de formato);
+  - 🔘 **Múltipla Escolha, Menu Suspenso & Escolha de Imagem**;
+  - ✉️ **E-mail & Telefone/WhatsApp** (com validações de formato e seletor DDI internacional);
   - 🔢 **Números & Escala de Avaliação / Estrelas**;
+  - 🛑 **Mensagem de Término / Desqualificação (Sem Input):** Nó de finalização de fluxo com texto explicativo e botão de conclusão, registrando a resposta como desqualificada;
   - 📅 **Agendamento com Google Calendar** (seleção de horários disponíveis em tempo real).
 - **Personalização de Design:** Cores primárias/secundárias, plano de fundo, tipografia e tema claro/escuro.
 - **Configurações Globais:** Personalização de título, descrição, slug público único e mensagens personalizadas.
@@ -31,10 +35,11 @@ A solução oferece uma experiência intuitiva no estilo *Typeform* com transiç
 - **Validação em Tempo Real:** Verificação imediata de campos obrigatórios e formatos de contato.
 
 ### 📊 Painel de Resultados & Análise (Analytics)
-- **Métricas em Tempo Real:** Total de respostas, respostas completas vs. parciais, taxa de conclusão e visualizações.
-- **Filtros Avançados:** Filtragem rápida por status (`Todos`, `Finalizados`, `Parciais`) e busca textual por dados do lead.
+- **Métricas em Tempo Real:** Total de respostas, respostas completas vs. parciais, taxa de conclusão e visualizações calculadas via agregações otimizadas.
+- **Filtros Avançados:** Filtragem rápida por status (`Todos`, `Concluídas`, `Parciais`) e busca textual por dados do lead.
+- **Diferenciação de Qualificação:** Status visualmente identificáveis na tabela e modal: `Concluído (100%)`, `Concluído (Não passou)` e `Parcial`.
 - **Visualização Detalhada em Modal:** Modal dinâmico para inspecionar respostas completas de cada participante individualmente.
-- **Exportação de Dados:** Exportação de respostas em formato **CSV** e **JSON** para integração com planilhas e pipelines externos.
+- **Exportação de Dados:** Exportação individual em **PDF** formatado para impressão/arquivamento e exportação global em planilha **CSV** (compatível com Excel).
 - **Timestamps em Horário de Brasília (America/Sao_Paulo):** Exibição cronológica ajustada no fuso local (UTC-3).
 
 ### 🔗 Integrações & Automação

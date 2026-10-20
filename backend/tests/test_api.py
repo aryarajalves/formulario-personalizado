@@ -596,9 +596,19 @@ def test_forms_endpoints_crud_flow():
         "questions": [
             {
                 "id": "q1",
+                "type": "multiple_choice",
+                "title": "Qual seu plano de preferência?",
+                "required": True,
+                "options": [
+                    {"id": "opt_1", "label": "Plano VIP", "action": "jump", "jump_to_question_id": "q2"},
+                    {"id": "opt_2", "label": "Gratuito", "action": "end", "jump_to_question_id": None}
+                ]
+            },
+            {
+                "id": "q2",
                 "type": "short_text",
-                "title": "Qual seu nome?",
-                "required": True
+                "title": "Qual seu faturamento?",
+                "required": False
             }
         ]
     }, headers=headers)
@@ -606,7 +616,9 @@ def test_forms_endpoints_crud_flow():
     updated_data = update_res.json()
     assert updated_data["title"] == "Pesquisa de Satisfação Atualizada"
     assert updated_data["webhook_url"] == "https://webhook.site/teste-unitario"
-    assert len(updated_data["questions"]) == 1
+    assert len(updated_data["questions"]) == 2
+    assert updated_data["questions"][0]["options"][0]["action"] == "jump"
+    assert updated_data["questions"][0]["options"][1]["action"] == "end" 
 
     # 6. Testar webhook sem webhook_url configurada (espera 400)
     # Primeiro limpa a url
@@ -705,6 +717,46 @@ def test_forms_endpoints_crud_flow():
     form_check = client.get(f"/api/v1/forms", headers=headers)
     curr_form = next(f for f in form_check.json() if f["id"] == form_id)
     assert curr_form["google_calendar_connected"] is False
+
+    # 7.5 Testar exportação de estrutura de formulário em JSON
+    export_res = client.get(f"/api/v1/forms/{form_id}/export", headers=headers)
+    assert export_res.status_code == 200
+    export_data = export_res.json()
+    assert export_data["version"] == "1.0"
+    assert export_data["type"] == "formulario_personalizado_export"
+    assert export_data["title"] == "Pesquisa de Satisfação Atualizada"
+    assert len(export_data["questions"]) >= 1
+    assert export_data["questions"][0]["options"][0]["action"] == "jump"
+    assert export_data["questions"][0]["options"][1]["action"] == "end"
+    assert "google_calendar_access_token" not in export_data
+
+    # 7.6 Testar importação do formulário exportado
+    import_res = client.post("/api/v1/forms/import", json=export_data, headers=headers)
+    assert import_res.status_code == 201
+    imported_form = import_res.json()
+    assert imported_form["title"] == "Pesquisa de Satisfação Atualizada"
+    assert imported_form["id"] != form_id
+    assert imported_form["slug"] != form_data["slug"]
+    assert len(imported_form["questions"]) >= 1
+    assert imported_form["questions"][0]["options"][0]["action"] == "jump"
+    assert imported_form["questions"][0]["options"][1]["action"] == "end" 
+    imported_id = imported_form["id"]
+
+    # 7.7 Importar com substituição de título e estrutura customizada
+    import_custom = client.post("/api/v1/forms/import", json={
+        "title": "Formulário Importado Customizado",
+        "data": export_data
+    }, headers=headers)
+    assert import_custom.status_code == 201
+    assert import_custom.json()["title"] == "Formulário Importado Customizado"
+    custom_id = import_custom.json()["id"]
+
+    # Limpar os formulários importados no teste
+    client.delete(f"/api/v1/forms/{imported_id}", headers=headers)
+    client.delete(f"/api/v1/forms/{custom_id}", headers=headers)
+
+    # 7.8 Exportar formulário inexistente retorna 404
+    assert client.get("/api/v1/forms/99999/export", headers=headers).status_code == 404
 
     # 8. Excluir formulário
     del_res = client.delete(f"/api/v1/forms/{form_id}", headers=headers)
@@ -998,6 +1050,51 @@ def test_webhook_delivery_logs_history_and_test_dispatch(monkeypatch):
     assert item["webhook_url"] == "https://webhook.site/audit-history-test"
     assert item["status_code"] == 200
     assert item["success"] is True
+
+    # 4. Limpeza
+    client.delete(f"/api/v1/forms/{form_id}", headers=headers)
+
+def test_submit_form_with_statement_disqualification():
+    # Login superadmin
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": settings.SUPERADMIN_EMAIL,
+        "password": settings.SUPERADMIN_PASSWORD
+    })
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Cria formulário com nó de término/desqualificação
+    form_res = client.post("/api/v1/forms", json={
+        "title": "Formulario com Desqualificacao",
+        "questions": [
+            {"id": "q1", "type": "short_text", "title": "Seu nome"},
+            {"id": "q_end", "type": "statement", "title": "Obrigado pelo seu tempo", "description": "Voce nao atende aos requisitos."}
+        ]
+    }, headers=headers)
+    assert form_res.status_code == 201
+    form_data = form_res.json()
+    form_id = form_data["id"]
+    slug = form_data["slug"]
+
+    # 2. Submete marcando como desqualificado
+    sub_res = client.post(f"/api/v1/forms/public/{slug}/submit", json={
+        "answers": [
+            {"question_id": "q1", "question_title": "Seu nome", "answer": "Candidato Nao Aprovado"},
+            {"question_id": "q_end", "question_title": "Obrigado pelo seu tempo", "answer": "(Mensagem de Término)"}
+        ],
+        "disqualified": True
+    })
+    assert sub_res.status_code == 200
+    assert sub_res.json()["success"] is True
+
+    # 3. Consulta respostas do formulário
+    resp_list = client.get(f"/api/v1/forms/{form_id}/responses", headers=headers)
+    assert resp_list.status_code == 200
+    r_data = resp_list.json()
+    assert r_data["counts"]["completed"] >= 1
+    found = [r for r in r_data["items"] if r["contact_name"] == "Candidato Nao Aprovado"]
+    assert len(found) == 1
+    assert found[0]["status"] == "CONCLUIDO_NAO_PASSOU"
 
     # 4. Limpeza
     client.delete(f"/api/v1/forms/{form_id}", headers=headers)

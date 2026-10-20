@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Check, ArrowRight, Sparkles, Loader2, CheckCircle2, ChevronDown, AlertCircle, ExternalLink } from 'lucide-react';
 import './PublicFormRespondent.css';
-import { evaluateNextQuestionIndex } from '../../utils/logicJump';
-import { COUNTRY_CODES } from '../../constants/countryCodes';
+import { evaluateNextQuestionIndex, getQuestionDisplayTag } from '../../utils/logicJump';
+import PublicAnswerArea from './PublicAnswerArea';
 
 export default function PublicFormRespondent({ slug }) {
   const [form, setForm] = useState(null);
@@ -50,6 +50,13 @@ export default function PublicFormRespondent({ slug }) {
     setFieldError('');
     const questions = form?.questions || [];
     const currentQ = questions[currentStep];
+
+    // Se for nó de término / desqualificação sem input, finaliza marcando como não passou
+    if (currentQ?.type === 'statement') {
+      handleSubmit(true);
+      return;
+    }
+
     const rawVal = answers[currentQ?.id] ? String(answers[currentQ.id]).trim() : '';
 
     // Se obrigatória e sem resposta
@@ -136,10 +143,13 @@ export default function PublicFormRespondent({ slug }) {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (isDisqualified = false) => {
     try {
       setSubmitting(true);
       const questions = form?.questions || [];
+      const currentQ = questions[currentStep];
+      const disqualified = isDisqualified || (currentQ?.type === 'statement');
+
       const formattedAnswers = questions.map(q => {
         let val = answers[q.id] || '';
         if (q.type === 'phone' && val) {
@@ -150,7 +160,7 @@ export default function PublicFormRespondent({ slug }) {
         return {
           question_id: q.id,
           question_title: q.title,
-          answer: val
+          answer: val || (q.type === 'statement' ? '(Mensagem de Término)' : '')
         };
       });
 
@@ -159,7 +169,8 @@ export default function PublicFormRespondent({ slug }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           response_id: responseId,
-          answers: formattedAnswers
+          answers: formattedAnswers,
+          disqualified: disqualified
         })
       });
 
@@ -301,7 +312,7 @@ export default function PublicFormRespondent({ slug }) {
         <div className="public-question-card">
           <div className="public-question-header">
             <span className="public-question-num">
-              {currentQ?.tag !== undefined && currentQ?.tag !== null && currentQ?.tag !== '' ? currentQ.tag : `${currentStep + 1} →`}
+              {getQuestionDisplayTag(currentQ, questions, form?.flows)}
             </span>
             <h1 className="public-question-title">
               {currentQ?.title}
@@ -309,158 +320,22 @@ export default function PublicFormRespondent({ slug }) {
             </h1>
           </div>
 
-          <div className="public-answer-area">
-            {/* Múltipla Escolha */}
-            {currentQ?.type === 'multiple_choice' && (
-              <div className="public-choices-list">
-                {['Opção A', 'Opção B', 'Opção C'].map((opt, i) => {
-                  const isSelected = answers[currentQ.id] === opt;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`public-choice-btn ${isSelected ? 'selected' : ''}`}
-                      onClick={() => handleAnswerChange(currentQ.id, opt)}
-                    >
-                      <span className="choice-kbd">{String.fromCharCode(65 + i)}</span>
-                      <span className="choice-txt">{opt}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          <PublicAnswerArea
+            currentQ={currentQ}
+            answers={answers}
+            selectedDdi={selectedDdi}
+            setSelectedDdi={setSelectedDdi}
+            onAnswerChange={handleAnswerChange}
+            onNext={handleNext}
+          />
 
-            {/* Sim/Não */}
-            {currentQ?.type === 'yes_no' && (
-              <div className="public-yes-no-row">
-                <button
-                  type="button"
-                  className={`public-choice-btn ${answers[currentQ.id] === 'Sim' ? 'selected' : ''}`}
-                  onClick={() => handleAnswerChange(currentQ.id, 'Sim')}
-                >
-                  <span className="choice-kbd">Y</span>
-                  <span className="choice-txt">Sim</span>
-                </button>
-                <button
-                  type="button"
-                  className={`public-choice-btn ${answers[currentQ.id] === 'Não' ? 'selected' : ''}`}
-                  onClick={() => handleAnswerChange(currentQ.id, 'Não')}
-                >
-                  <span className="choice-kbd">N</span>
-                  <span className="choice-txt">Não</span>
-                </button>
-              </div>
-            )}
-
-            {/* Avaliação Estrelas */}
-            {currentQ?.type === 'rating' && (
-              <div className="public-rating-row">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    className={`public-star-btn ${(answers[currentQ.id] || 0) >= star ? 'active' : ''}`}
-                    onClick={() => handleAnswerChange(currentQ.id, star)}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Google Agenda */}
-            {currentQ?.type === 'google_calendar' && (
-              <div className="public-google-cal-box">
-                <input
-                  type="datetime-local"
-                  value={answers[currentQ.id] || ''}
-                  onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
-                  className="public-input-field"
-                  data-testid="calendar-input"
-                  autoFocus
-                />
-              </div>
-            )}
-
-            {/* Texto Longo */}
-            {currentQ?.type === 'long_text' && (
-              <textarea
-                value={answers[currentQ.id] || ''}
-                onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
-                placeholder={currentQ?.placeholder || 'Digite sua resposta aqui...'}
-                className="public-input-textarea"
-                rows={4}
-                autoFocus
-              />
-            )}
-
-            {/* Telefone com Dropdown de DDI */}
-            {currentQ?.type === 'phone' && (
-              <div className="public-phone-input-wrapper">
-                <div className="public-ddi-select-box">
-                  <select
-                    value={selectedDdi}
-                    onChange={(e) => setSelectedDdi(e.target.value)}
-                    className="public-ddi-select"
-                    data-testid="ddi-select"
-                  >
-                    {COUNTRY_CODES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.flag} {c.code} ({c.name})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="ddi-arrow-icon" />
-                </div>
-                <input
-                  type="tel"
-                  value={answers[currentQ.id] || ''}
-                  onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                  placeholder={currentQ?.placeholder || '(11) 98888-7777'}
-                  className="public-phone-input"
-                  data-testid="phone-input"
-                  autoFocus
-                />
-              </div>
-            )}
-
-            {/* Data (Calendário nativo) */}
-            {currentQ?.type === 'date' && (
-              <input
-                type="date"
-                value={answers[currentQ.id] || ''}
-                onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                className="public-input-field public-date-field"
-                data-testid="date-input"
-                autoFocus
-              />
-            )}
-
-            {/* Input Padrão (Texto curto, email, número, etc.) */}
-            {!['multiple_choice', 'yes_no', 'rating', 'long_text', 'phone', 'google_calendar', 'date'].includes(currentQ?.type) && (
-              <input
-                type={currentQ?.type === 'email' ? 'email' : currentQ?.type === 'number' ? 'number' : 'text'}
-                value={answers[currentQ.id] || ''}
-                onChange={(e) => handleAnswerChange(currentQ.id, e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                placeholder={currentQ?.placeholder || (currentQ?.type === 'email' ? 'nome@exemplo.com' : 'Digite sua resposta...')}
-                className="public-input-field"
-                data-testid="standard-input"
-                autoFocus
-              />
-            )}
-
-
-            {/* Mensagem de Erro de Validação Visual */}
+          {/* Mensagem de Erro de Validação Visual */}
             {fieldError && (
               <div className="public-field-error-message" data-testid="field-error-message">
                 <AlertCircle size={16} />
                 <span>{fieldError}</span>
               </div>
             )}
-          </div>
 
 
           <div className="public-actions-footer">
@@ -475,8 +350,12 @@ export default function PublicFormRespondent({ slug }) {
               disabled={submitting}
             >
               {submitting ? (
-
                 <span>Enviando...</span>
+              ) : currentQ?.type === 'statement' ? (
+                <>
+                  <span>{currentQ?.button_text || 'Finalizar'}</span>
+                  <Check size={16} />
+                </>
               ) : currentStep === questions.length - 1 ? (
                 <>
                   <span>Finalizar</span>

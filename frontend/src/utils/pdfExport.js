@@ -12,7 +12,9 @@ export function printLeadPdf(selectedResponse, formSlug, formatDate) {
   const leadName = selectedResponse.contact_name || 'Anônimo';
   const leadEmail = selectedResponse.contact_email || '—';
   const leadPhone = selectedResponse.contact_phone || '—';
-  const statusLabel = selectedResponse.status === 'CONCLUIDO' 
+  const statusLabel = selectedResponse.status === 'CONCLUIDO_NAO_PASSOU'
+    ? 'Concluído (Não passou)'
+    : selectedResponse.status === 'CONCLUIDO' 
     ? 'Concluído (100%)' 
     : `Parcial (${Math.round(selectedResponse.completion_percent || 0)}%)`;
   const createdAt = formatDate ? formatDate(selectedResponse.created_at) : (selectedResponse.created_at || '—');

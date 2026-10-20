@@ -1,0 +1,84 @@
+/* Estilos complementares da área de respostas públicas */
+.public-dropdown-wrapper {
+  width: 100%;
+}
+
+.public-dropdown-select {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.public-image-choices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.public-image-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  text-align: left;
+}
+
+.public-image-card:hover {
+  border-color: rgba(96, 165, 250, 0.6);
+  transform: translateY(-2px);
+}
+
+.public-image-card.selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+.public-card-image-box {
+  height: 110px;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.public-card-image-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.public-img-placeholder-icon {
+  color: #64748b;
+}
+
+.public-card-label-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+/* Área de Declaração / Término */
+.public-statement-area {
+  width: 100%;
+  margin: 12px 0 20px 0;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid #f97316;
+  border-radius: 6px;
+}
+
+.public-statement-message {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--form-text, #f8fafc);
+  opacity: 0.9;
+  white-space: pre-wrap;
+  margin: 0;
+}

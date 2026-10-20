@@ -81,3 +81,10 @@ Registro de migrações e atualizações estruturais do banco de dados (PostgreS
 
 
 
+
+---
+
+### [20/10/2026] - Suporte a Múltiplos Fluxos e Ramificações (Branching)
+- **Tabelas Afetadas:**
+  - `forms`: Adicionada coluna `flows` (JSON DEFAULT '[]').
+- **Script de Migração:** `backend/scripts/add_flows_column.py`

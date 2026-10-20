@@ -10,8 +10,12 @@ import {
   ChevronDown, 
   Calendar, 
   Upload, 
-  Check 
+  Check,
+  Image as ImageIcon,
+  AlertCircle
 } from 'lucide-react';
+import { normalizeQuestionOptions, getQuestionDisplayTag } from '../../../utils/logicJump';
+import './ChoicePreview.css';
 
 export default function EditorCanvas({
   deviceView,
@@ -81,7 +85,6 @@ export default function EditorCanvas({
                 className="interactive-question-title-input welcome-title-input"
                 value={form?.welcome_screen?.title || ''}
                 onChange={(e) => handleUpdateWelcomeScreen('title', e.target.value)}
-                onBlur={() => handleSaveForm()}
                 placeholder="Título da tela de boas-vindas..."
                 data-testid="welcome-screen-title-input"
               />
@@ -90,7 +93,6 @@ export default function EditorCanvas({
                 className="interactive-ending-desc-input welcome-desc-input"
                 value={form?.welcome_screen?.description || ''}
                 onChange={(e) => handleUpdateWelcomeScreen('description', e.target.value)}
-                onBlur={() => handleSaveForm()}
                 placeholder="Descreva uma introdução cativante para os respondentes antes de iniciarem..."
                 rows={4}
                 data-testid="welcome-screen-desc-input"
@@ -126,7 +128,6 @@ export default function EditorCanvas({
                 className="interactive-question-title-input"
                 value={currentEndingScreen?.title || ''}
                 onChange={(e) => handleUpdateCurrentEndingScreen('title', e.target.value)}
-                onBlur={() => handleSaveForm()}
                 placeholder="Recebemos sua aplicação"
                 data-testid="ending-screen-title-input"
               />
@@ -135,7 +136,6 @@ export default function EditorCanvas({
                 className="interactive-ending-desc-input"
                 value={currentEndingScreen?.description || ''}
                 onChange={(e) => handleUpdateCurrentEndingScreen('description', e.target.value)}
-                onBlur={() => handleSaveForm()}
                 placeholder="Obrigado por responder. Descreva o que o usuário deve fazer em seguida..."
                 rows={3}
                 data-testid="ending-screen-desc-input"
@@ -166,16 +166,12 @@ export default function EditorCanvas({
                   <input
                     type="text"
                     className="interactive-question-tag-input"
-                    value={currentQuestion?.tag !== undefined ? currentQuestion.tag : `${selectedQuestionIndex + 1} →`}
+                    value={currentQuestion?.tag !== undefined ? currentQuestion.tag : getQuestionDisplayTag(currentQuestion, form?.questions, form?.flows)}
                     onChange={(e) => handleUpdateCurrentQuestion('tag', e.target.value)}
-                    onBlur={() => {
-                      setEditingQuestionTag(false);
-                      handleSaveForm();
-                    }}
+                    onBlur={() => setEditingQuestionTag(false)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         setEditingQuestionTag(false);
-                        handleSaveForm();
                       }
                     }}
                     autoFocus
@@ -188,7 +184,7 @@ export default function EditorCanvas({
                     title="Clique para editar o prefixo/nome superior"
                     data-testid="interactive-question-tag-label"
                   >
-                    {currentQuestion?.tag !== undefined ? currentQuestion.tag : `${selectedQuestionIndex + 1} →`}
+                    {getQuestionDisplayTag(currentQuestion, form?.questions, form?.flows)}
                     <Edit2 size={11} className="tag-edit-pencil" />
                   </span>
                 )}
@@ -206,7 +202,6 @@ export default function EditorCanvas({
                 className="interactive-question-title-input"
                 value={currentQuestion?.title || ''}
                 onChange={(e) => handleUpdateCurrentQuestion('title', e.target.value)}
-                onBlur={() => handleSaveForm()}
                 placeholder="Escreva a sua pergunta aqui..."
                 data-testid="current-question-title-input"
               />
@@ -215,10 +210,12 @@ export default function EditorCanvas({
                 {/* Renderizador Dinâmico Baseado no Tipo da Questão */}
                 {currentQuestion?.type === 'multiple_choice' && (
                   <div className="preview-options-list">
-                    {['Opção A', 'Opção B', 'Opção C'].map((opt, i) => (
-                      <div key={i} className="preview-choice-item">
-                        <span className="choice-key">{String.fromCharCode(65 + i)}</span>
-                        <span className="choice-label">{opt}</span>
+                    {normalizeQuestionOptions(currentQuestion).map((opt, i) => (
+                      <div key={opt.id || i} className="preview-choice-item">
+                        <span className="choice-key">{String.fromCharCode(65 + (i % 26))}</span>
+                        <span className="choice-label">{opt.label}</span>
+                        {opt.action === 'jump' && <span className="choice-action-badge jump">🔀 Salto</span>}
+                        {opt.action === 'end' && <span className="choice-action-badge end">🏁 Tela Final</span>}
                       </div>
                     ))}
                   </div>
@@ -226,21 +223,54 @@ export default function EditorCanvas({
 
                 {currentQuestion?.type === 'yes_no' && (
                   <div className="preview-yes-no-row">
-                    <div className="preview-choice-item yes-item">
-                      <span className="choice-key">Y</span>
-                      <span className="choice-label">Sim</span>
-                    </div>
-                    <div className="preview-choice-item no-item">
-                      <span className="choice-key">N</span>
-                      <span className="choice-label">Não</span>
-                    </div>
+                    {normalizeQuestionOptions(currentQuestion).map((opt, i) => (
+                      <div key={opt.id || i} className={`preview-choice-item ${i === 0 ? 'yes-item' : 'no-item'}`}>
+                        <span className="choice-key">{i === 0 ? 'Y' : 'N'}</span>
+                        <span className="choice-label">{opt.label}</span>
+                        {opt.action === 'jump' && <span className="choice-action-badge jump">🔀</span>}
+                        {opt.action === 'end' && <span className="choice-action-badge end">🏁</span>}
+                      </div>
+                    ))}
                   </div>
                 )}
 
                 {currentQuestion?.type === 'dropdown' && (
-                  <div className="preview-dropdown-box">
-                    <span>Selecione uma opção...</span>
-                    <ChevronDown size={18} />
+                  <div className="preview-dropdown-wrapper">
+                    <div className="preview-dropdown-box">
+                      <span>Selecione uma opção...</span>
+                      <ChevronDown size={18} />
+                    </div>
+                    <div className="preview-dropdown-options-list">
+                      {normalizeQuestionOptions(currentQuestion).map((opt, i) => (
+                        <div key={opt.id || i} className="preview-dropdown-item">
+                          <span>{opt.label}</span>
+                          {opt.action === 'jump' && <span className="choice-action-badge jump">🔀 Salto</span>}
+                          {opt.action === 'end' && <span className="choice-action-badge end">🏁 Tela Final</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentQuestion?.type === 'image_choice' && (
+                  <div className="preview-image-choice-grid">
+                    {normalizeQuestionOptions(currentQuestion).map((opt, i) => (
+                      <div key={opt.id || i} className="preview-image-choice-card">
+                        <div className="preview-image-box">
+                          {opt.image_url ? (
+                            <img src={opt.image_url} alt={opt.label} />
+                          ) : (
+                            <ImageIcon size={24} className="preview-image-placeholder-icon" />
+                          )}
+                        </div>
+                        <div className="preview-image-footer">
+                          <span className="choice-key">{String.fromCharCode(65 + (i % 26))}</span>
+                          <span className="choice-label">{opt.label}</span>
+                          {opt.action === 'jump' && <span className="choice-action-badge jump">🔀</span>}
+                          {opt.action === 'end' && <span className="choice-action-badge end">🏁</span>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -346,15 +376,25 @@ export default function EditorCanvas({
                   </div>
                 )}
 
-                {/* Fallback padrão para Texto Curto, Número, Email, etc. */}
-                {!['multiple_choice', 'yes_no', 'dropdown', 'rating', 'file_upload', 'long_text', 'date', 'phone', 'website', 'google_calendar'].includes(currentQuestion?.type) && (
+                {/* Fallback padrão para Texto Curto, Número, Email ou Declaração */}
+                {currentQuestion?.type === 'statement' ? (
+                  <div className="preview-statement-box" data-testid="preview-statement-box">
+                    <div className="statement-badge-info">
+                      <AlertCircle size={14} />
+                      <span>Nó de Término / Desqualificação (Sem campo de entrada)</span>
+                    </div>
+                    <div className="statement-description-preview">
+                      {currentQuestion?.description || currentQuestion?.placeholder || 'Infelizmente você não atende aos requisitos desta etapa no momento.'}
+                    </div>
+                  </div>
+                ) : !['multiple_choice', 'yes_no', 'dropdown', 'rating', 'file_upload', 'long_text', 'date', 'phone', 'website', 'google_calendar'].includes(currentQuestion?.type) ? (
                   <input
                     type={currentQuestion?.type === 'number' ? 'number' : currentQuestion?.type === 'email' ? 'email' : 'text'}
                     disabled
                     placeholder={currentQuestion?.placeholder || (currentQuestion?.type === 'email' ? 'exemplo@dominio.com' : currentQuestion?.type === 'number' ? '0' : 'Sua resposta aqui...')}
                     className="mockup-answer-input"
                   />
-                )}
+                ) : null}
               </div>
 
               <div className="preview-submit-btn-row">
@@ -366,7 +406,13 @@ export default function EditorCanvas({
                     color: form?.theme?.buttonTextColor || '#ffffff'
                   }}
                 >
-                  OK <Check size={14} />
+                  {currentQuestion?.type === 'statement' ? (
+                    <span>{currentQuestion?.button_text || 'Finalizar'}</span>
+                  ) : (
+                    <>
+                      OK <Check size={14} />
+                    </>
+                  )}
                 </button>
                 <span className="press-enter-hint">pressione <strong>Enter ↵</strong></span>
               </div>

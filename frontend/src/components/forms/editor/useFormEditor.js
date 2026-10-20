@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '../../../context/ToastContext';
+import { normalizeQuestionOptions, normalizeFormFlows, CHOICE_QUESTION_TYPES, DEFAULT_FLOW_ID } from '../../../utils/logicJump';
+import { useFormResponses } from './useFormResponses';
 
 export function useFormEditor(formId) {
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [deviceView, setDeviceView] = useState('desktop');
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [activeItemType, setActiveItemType] = useState('question'); // 'question' | 'ending_screen' | 'welcome_screen'
@@ -16,63 +19,29 @@ export function useFormEditor(formId) {
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [isTypePickerOpen, setIsTypePickerOpen] = useState(false);
   const [typePickerMode, setTypePickerMode] = useState('add'); // 'add' | 'change'
+  const [targetFlowIdForAdd, setTargetFlowIdForAdd] = useState(DEFAULT_FLOW_ID);
   const [editingQuestionTag, setEditingQuestionTag] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const [responses, setResponses] = useState([]);
-  const [responsesPage, setResponsesPage] = useState(1);
-  const [responsesTotal, setResponsesTotal] = useState(0);
-  const [responsesTotalPages, setResponsesTotalPages] = useState(1);
-  const [responsesFilter, setResponsesFilter] = useState('ALL'); // 'ALL' | 'CONCLUIDO' | 'PARCIAL'
-  const [responsesCounts, setResponsesCounts] = useState({ all: 0, completed: 0, partial: 0 });
-  const [loadingResponses, setLoadingResponses] = useState(false);
-
   const [googleCalConnected, setGoogleCalConnected] = useState(false);
   const [googleCalEmail, setGoogleCalEmail] = useState('');
-
-  const [deleteConfirm, setDeleteConfirm] = useState({
-    isOpen: false,
-    type: null,
-    index: null,
-    title: ''
-  });
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, type: null, index: null, title: '' });
 
   const { addToast } = useToast();
+  const {
+    responses, setResponses,
+    responsesPage, setResponsesPage,
+    responsesTotal, responsesTotalPages,
+    responsesFilter, setResponsesFilter,
+    responsesCounts, loadingResponses,
+    fetchResponses
+  } = useFormResponses(formId, editorTab, addToast);
 
   useEffect(() => {
     fetchForm();
   }, [formId]);
-
-  useEffect(() => {
-    if (editorTab === 'resultados') {
-      fetchResponses(responsesPage, responsesFilter);
-    }
-  }, [editorTab, responsesPage, responsesFilter]);
-
-  const fetchResponses = async (page = 1, status = 'ALL') => {
-    try {
-      setLoadingResponses(true);
-      const token = localStorage.getItem('auth_token');
-      const statusParam = status !== 'ALL' ? `&status=${status}` : '';
-      const res = await fetch(`/api/v1/forms/${formId}/responses?page=${page}&limit=20${statusParam}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Não foi possível carregar as respostas.');
-      const data = await res.json();
-      setResponses(data.items || []);
-      setResponsesTotal(data.total || 0);
-      setResponsesTotalPages(data.total_pages || 1);
-      if (data.counts) {
-        setResponsesCounts(data.counts);
-      }
-    } catch (err) {
-      addToast(err.message || 'Erro ao carregar respostas', 'error');
-    } finally {
-      setLoadingResponses(false);
-    }
-  };
 
   const fetchForm = async () => {
     try {
@@ -85,22 +54,23 @@ export function useFormEditor(formId) {
       const data = await res.json();
 
       if (!data.questions || data.questions.length === 0) {
-        data.questions = [
-          {
-            id: 'q_default_1',
-            type: 'short_text',
-            category: 'TEXTO E NÚMERO',
-            title: 'Qual é o seu nome completo?',
-            required: true,
-            placeholder: 'Digite sua resposta aqui...'
-          }
-        ];
+        data.questions = [{
+          id: 'q_default_1',
+          type: 'short_text',
+          category: 'TEXTO E NÚMERO',
+          title: 'Qual é o seu nome completo?',
+          required: true,
+          flow_id: DEFAULT_FLOW_ID,
+          placeholder: 'Digite sua resposta aqui...'
+        }];
       }
+      data.flows = normalizeFormFlows(data.flows);
       setForm(data);
       setTitleInput(data.title);
       setWebhookUrl(data.webhook_url || '');
       setGoogleCalConnected(!!data.google_calendar_connected);
       setGoogleCalEmail(data.google_calendar_email || '');
+      setHasUnsavedChanges(false);
     } catch (err) {
       addToast(err.message || 'Erro ao carregar formulário', 'error');
     } finally {
@@ -108,13 +78,23 @@ export function useFormEditor(formId) {
     }
   };
 
-  const handleSaveForm = async (updatedQuestions, updatedTitle, updatedWebhookUrl, updatedGoogleCal, updatedEndingScreens, updatedWelcomeScreen, updatedTheme) => {
+  const handleSaveForm = async (
+    updatedQuestions,
+    updatedTitle,
+    updatedWebhookUrl,
+    updatedGoogleCal,
+    updatedEndingScreens,
+    updatedWelcomeScreen,
+    updatedTheme,
+    updatedFlows
+  ) => {
     try {
       setSaving(true);
       const token = localStorage.getItem('auth_token');
       const payload = {
-        title: updatedTitle || form?.title,
-        questions: updatedQuestions || form?.questions,
+        title: updatedTitle !== undefined ? updatedTitle : (form?.title || titleInput),
+        questions: updatedQuestions !== undefined ? updatedQuestions : (form?.questions || []),
+        flows: updatedFlows !== undefined ? updatedFlows : (form?.flows || []),
         welcome_screen: updatedWelcomeScreen !== undefined ? updatedWelcomeScreen : (form?.welcome_screen || null),
         ending_screens: updatedEndingScreens !== undefined ? updatedEndingScreens : (form?.ending_screens || []),
         theme: updatedTheme !== undefined ? updatedTheme : (form?.theme || {}),
@@ -137,11 +117,15 @@ export function useFormEditor(formId) {
 
       if (!res.ok) throw new Error('Erro ao salvar alterações.');
       const saved = await res.json();
+      saved.flows = normalizeFormFlows(saved.flows);
       setForm(saved);
+      setTitleInput(saved.title);
       setWebhookUrl(saved.webhook_url || '');
       setGoogleCalConnected(!!saved.google_calendar_connected);
       setGoogleCalEmail(saved.google_calendar_email || '');
+      setHasUnsavedChanges(false);
       addToast('Alterações salvas com sucesso!', 'success');
+      return saved;
     } catch (err) {
       addToast(err.message || 'Erro ao salvar', 'error');
     } finally {
@@ -149,6 +133,9 @@ export function useFormEditor(formId) {
     }
   };
 
+  const handleManualSave = () => {
+    return handleSaveForm();
+  };
 
   const handleConnectGoogleCalendar = async () => {
     try {
@@ -217,38 +204,44 @@ export function useFormEditor(formId) {
     }
   };
 
-  const handleAddQuestion = (typeItem) => {
+  const handleAddQuestion = (typeItem, targetFlowId = null) => {
+    const isChoice = CHOICE_QUESTION_TYPES.includes(typeItem.id);
+    const flowId = targetFlowId || targetFlowIdForAdd || DEFAULT_FLOW_ID;
     const newQuestion = {
       id: `q_${Date.now()}`,
       type: typeItem.id,
       category: typeItem.category,
       title: typeItem.defaultTitle,
       required: false,
-      placeholder: 'Digite sua resposta aqui...'
+      flow_id: flowId,
+      placeholder: 'Digite sua resposta aqui...',
+      options: isChoice ? normalizeQuestionOptions({ type: typeItem.id }) : undefined
     };
-
     const newQuestions = [...(form?.questions || []), newQuestion];
     setForm(prev => ({ ...prev, questions: newQuestions }));
     setSelectedQuestionIndex(newQuestions.length - 1);
-    handleSaveForm(newQuestions);
+    setActiveItemType('question');
+    setHasUnsavedChanges(true);
   };
 
   const handleChangeQuestionType = (typeItem) => {
     const updated = [...(form?.questions || [])];
     const targetIdx = selectedQuestionIndex >= 0 && selectedQuestionIndex < updated.length ? selectedQuestionIndex : 0;
     if (updated[targetIdx]) {
+      const isChoice = CHOICE_QUESTION_TYPES.includes(typeItem.id);
       updated[targetIdx] = {
         ...updated[targetIdx],
         type: typeItem.id,
-        category: typeItem.category
+        category: typeItem.category,
+        options: isChoice ? normalizeQuestionOptions({ type: typeItem.id, options: updated[targetIdx].options }) : updated[targetIdx].options
       };
       setForm(prev => ({ ...prev, questions: updated }));
-      handleSaveForm(updated);
-      addToast(`Tipo alterado para ${typeItem.label}!`, 'success');
+      setHasUnsavedChanges(true);
     }
   };
 
-  const openTypePickerForAdd = () => {
+  const openTypePickerForAdd = (targetFlowId = DEFAULT_FLOW_ID) => {
+    setTargetFlowIdForAdd(typeof targetFlowId === 'string' ? targetFlowId : DEFAULT_FLOW_ID);
     setTypePickerMode('add');
     setIsTypePickerOpen(true);
   };
@@ -256,6 +249,63 @@ export function useFormEditor(formId) {
   const openTypePickerForChange = () => {
     setTypePickerMode('change');
     setIsTypePickerOpen(true);
+  };
+
+  const handleAddFlow = (customName) => {
+    const currentFlows = normalizeFormFlows(form?.flows);
+    const nextLetter = String.fromCharCode(65 + currentFlows.length);
+    const newFlow = {
+      id: `flow_${Date.now()}`,
+      name: (customName || `Ramificação ${nextLetter}`).trim()
+    };
+    const updatedFlows = [...currentFlows, newFlow];
+    setForm(prev => ({ ...prev, flows: updatedFlows }));
+    setHasUnsavedChanges(true);
+    return newFlow.id;
+  };
+
+  const handleRenameFlow = (flowId, newName) => {
+    if (!newName || !newName.trim()) return;
+    const currentFlows = normalizeFormFlows(form?.flows);
+    const updatedFlows = currentFlows.map(f => f.id === flowId ? { ...f, name: newName.trim() } : f);
+    setForm(prev => ({ ...prev, flows: updatedFlows }));
+    setHasUnsavedChanges(true);
+  };
+
+  const promptDeleteFlow = (flowId) => {
+    if (flowId === DEFAULT_FLOW_ID) {
+      addToast('O Fluxo Principal não pode ser excluído.', 'warning');
+      return;
+    }
+    const currentFlows = normalizeFormFlows(form?.flows);
+    const flow = currentFlows.find(f => f.id === flowId);
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'flow',
+      index: flowId,
+      title: flow?.name ? `a "${flow.name}" e todas as suas questões` : 'a ramificação'
+    });
+  };
+
+  const handleMoveQuestionToFlow = (qIndex, targetFlowId) => {
+    const updated = [...(form?.questions || [])];
+    if (updated[qIndex]) {
+      updated[qIndex] = {
+        ...updated[qIndex],
+        flow_id: targetFlowId || DEFAULT_FLOW_ID
+      };
+      setForm(prev => ({ ...prev, questions: updated }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const promptDeleteWelcomeScreen = () => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'welcome_screen',
+      index: 0,
+      title: 'a Tela de Boas-Vindas'
+    });
   };
 
   const promptDeleteQuestion = (idx) => {
@@ -283,7 +333,9 @@ export function useFormEditor(formId) {
   const handleConfirmDelete = () => {
     if (!deleteConfirm.isOpen || deleteConfirm.index === null) return;
 
-    if (deleteConfirm.type === 'question') {
+    if (deleteConfirm.type === 'welcome_screen') {
+      handleToggleWelcomeScreen(false);
+    } else if (deleteConfirm.type === 'question') {
       const idxToDelete = deleteConfirm.index;
       const currentQuestions = form?.questions || [];
       if (currentQuestions.length <= 1) {
@@ -296,8 +348,7 @@ export function useFormEditor(formId) {
       if (selectedQuestionIndex >= newQuestions.length) {
         setSelectedQuestionIndex(Math.max(0, newQuestions.length - 1));
       }
-      handleSaveForm(newQuestions);
-      addToast('Questão excluída com sucesso!', 'info');
+      setHasUnsavedChanges(true);
     } else if (deleteConfirm.type === 'ending_screen') {
       const idxToDelete = deleteConfirm.index;
       const currentEndings = form?.ending_screens || [];
@@ -308,14 +359,26 @@ export function useFormEditor(formId) {
       } else {
         setSelectedEndingIndex(Math.max(0, idxToDelete - 1));
       }
-      handleSaveForm(null, null, undefined, undefined, newEndings);
-      addToast('Tela final removida com sucesso!', 'info');
+      setHasUnsavedChanges(true);
+    } else if (deleteConfirm.type === 'flow') {
+      const flowIdToDelete = deleteConfirm.index;
+      const currentFlows = normalizeFormFlows(form?.flows);
+      const updatedFlows = currentFlows.filter(f => f.id !== flowIdToDelete);
+      const updatedQuestions = (form?.questions || []).filter(q => (q.flow_id || DEFAULT_FLOW_ID) !== flowIdToDelete);
+      setForm(prev => ({ ...prev, flows: updatedFlows, questions: updatedQuestions }));
+      setSelectedQuestionIndex(0);
+      setHasUnsavedChanges(true);
     }
 
     setDeleteConfirm({ isOpen: false, type: null, index: null, title: '' });
   };
 
   const handleAddEndingScreen = () => {
+    const currentEndings = form?.ending_screens || [];
+    if (currentEndings.length >= 1) {
+      addToast('Só é permitida uma tela final por formulário.', 'warning');
+      return;
+    }
     const newEnding = {
       id: `end_${Date.now()}`,
       title: 'Recebemos sua aplicação',
@@ -323,27 +386,31 @@ export function useFormEditor(formId) {
       button_text: 'Acessar nosso site',
       button_url: 'https://'
     };
-    const currentEndings = form?.ending_screens || [];
     const newEndings = [...currentEndings, newEnding];
     setForm(prev => ({ ...prev, ending_screens: newEndings }));
     setActiveItemType('ending_screen');
     setSelectedEndingIndex(newEndings.length - 1);
-    handleSaveForm(null, null, undefined, undefined, newEndings);
-    addToast('Tela final adicionada com sucesso!', 'success');
+    setHasUnsavedChanges(true);
   };
 
-  const handleUpdateCurrentEndingScreen = (field, value, autoSave = false) => {
+  const handleMoveQuestion = (fromIdx, toIdx) => {
+    const list = [...(form?.questions || [])];
+    if (fromIdx < 0 || fromIdx >= list.length || toIdx < 0 || toIdx >= list.length || fromIdx === toIdx) return;
+    const [moved] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, moved);
+    setForm(prev => ({ ...prev, questions: list }));
+    setSelectedQuestionIndex(toIdx);
+    setActiveItemType('question');
+    setHasUnsavedChanges(true);
+  };
+
+  const handleUpdateCurrentEndingScreen = (field, value) => {
     const updated = [...(form?.ending_screens || [])];
     const targetIdx = selectedEndingIndex >= 0 && selectedEndingIndex < updated.length ? selectedEndingIndex : 0;
     if (updated[targetIdx]) {
-      updated[targetIdx] = {
-        ...updated[targetIdx],
-        [field]: value
-      };
+      updated[targetIdx] = { ...updated[targetIdx], [field]: value };
       setForm(prev => ({ ...prev, ending_screens: updated }));
-      if (autoSave) {
-        handleSaveForm(null, null, undefined, undefined, updated);
-      }
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -357,65 +424,44 @@ export function useFormEditor(formId) {
       };
       setForm(prev => ({ ...prev, welcome_screen: defaultWelcome }));
       setActiveItemType('welcome_screen');
-      handleSaveForm(null, null, undefined, undefined, undefined, defaultWelcome);
-      addToast('Tela de boas-vindas ativada com sucesso!', 'success');
+      setHasUnsavedChanges(true);
     } else {
-      const disabledWelcome = {
-        enabled: false
-      };
+      const disabledWelcome = { enabled: false };
       setForm(prev => ({ ...prev, welcome_screen: disabledWelcome }));
-      if (activeItemType === 'welcome_screen') {
-        setActiveItemType('question');
-      }
-      handleSaveForm(null, null, undefined, undefined, undefined, disabledWelcome);
-      addToast('Tela de boas-vindas desativada.', 'info');
+      if (activeItemType === 'welcome_screen') setActiveItemType('question');
+      setHasUnsavedChanges(true);
     }
   };
 
-  const handleUpdateWelcomeScreen = (field, value, autoSave = false) => {
+  const handleUpdateWelcomeScreen = (field, value) => {
     const current = form?.welcome_screen || {};
-    const updated = {
-      ...current,
-      enabled: true,
-      [field]: value
-    };
+    const updated = { ...current, enabled: true, [field]: value };
     setForm(prev => ({ ...prev, welcome_screen: updated }));
-    if (autoSave) {
-      handleSaveForm(null, null, undefined, undefined, undefined, updated);
-    }
+    setHasUnsavedChanges(true);
   };
 
-  const handleUpdateCurrentQuestion = (field, value, autoSave = false) => {
+  const handleUpdateCurrentQuestion = (field, value) => {
     const updated = [...(form?.questions || [])];
     const targetIdx = selectedQuestionIndex >= 0 && selectedQuestionIndex < updated.length ? selectedQuestionIndex : 0;
     if (updated[targetIdx]) {
-      updated[targetIdx] = {
-        ...updated[targetIdx],
-        [field]: value
-      };
+      updated[targetIdx] = { ...updated[targetIdx], [field]: value };
       setForm(prev => ({ ...prev, questions: updated }));
-      if (autoSave) {
-        handleSaveForm(updated);
-      }
+      setHasUnsavedChanges(true);
     }
   };
 
   const handleSaveTitle = () => {
     setIsEditingTitle(false);
     if (titleInput.trim() && titleInput !== form?.title) {
-      handleSaveForm(null, titleInput.trim());
+      setForm(prev => ({ ...prev, title: titleInput.trim() }));
+      setHasUnsavedChanges(true);
     }
   };
 
-  const handleUpdateTheme = (newThemeAttrs, autoSave = true) => {
-    const updatedTheme = {
-      ...(form?.theme || {}),
-      ...newThemeAttrs
-    };
+  const handleUpdateTheme = (newThemeAttrs) => {
+    const updatedTheme = { ...(form?.theme || {}), ...newThemeAttrs };
     setForm(prev => ({ ...prev, theme: updatedTheme }));
-    if (autoSave) {
-      handleSaveForm(null, null, undefined, undefined, undefined, undefined, updatedTheme);
-    }
+    setHasUnsavedChanges(true);
   };
 
   const copyShareLink = () => {
@@ -427,69 +473,27 @@ export function useFormEditor(formId) {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-
-
   return {
-    form,
-    loading,
-    saving,
-    deviceView,
-    setDeviceView,
-    selectedQuestionIndex,
-    setSelectedQuestionIndex,
-    activeItemType,
-    setActiveItemType,
-    selectedEndingIndex,
-    setSelectedEndingIndex,
-    activeTab,
-    setActiveTab,
-    editorTab,
-    setEditorTab,
-    webhookUrl,
-    setWebhookUrl,
-    testingWebhook,
-    isTypePickerOpen,
-    setIsTypePickerOpen,
-    typePickerMode,
-    editingQuestionTag,
-    setEditingQuestionTag,
-    isEditingTitle,
-    setIsEditingTitle,
-    titleInput,
-    setTitleInput,
-    copiedLink,
-    responses,
-    responsesPage,
-    setResponsesPage,
-    responsesTotal,
-    responsesTotalPages,
-    responsesFilter,
-    setResponsesFilter,
-    responsesCounts,
-    loadingResponses,
-    googleCalConnected,
-    googleCalEmail,
-    deleteConfirm,
-    setDeleteConfirm,
-    handleSaveForm,
-    handleConnectGoogleCalendar,
-    handleDisconnectGoogleCalendar,
-    handleTestWebhook,
-    handleAddQuestion,
-    handleChangeQuestionType,
-    openTypePickerForAdd,
-    openTypePickerForChange,
-    promptDeleteQuestion,
-    promptDeleteEndingScreen,
-    handleConfirmDelete,
-    handleAddEndingScreen,
-    handleUpdateCurrentEndingScreen,
-    handleToggleWelcomeScreen,
-    handleUpdateWelcomeScreen,
-    handleUpdateCurrentQuestion,
-    handleSaveTitle,
-    handleUpdateTheme,
-    copyShareLink
+    form, setForm, loading, saving, hasUnsavedChanges, setHasUnsavedChanges,
+    deviceView, setDeviceView,
+    selectedQuestionIndex, setSelectedQuestionIndex, activeItemType, setActiveItemType,
+    selectedEndingIndex, setSelectedEndingIndex, activeTab, setActiveTab,
+    editorTab, setEditorTab, webhookUrl, setWebhookUrl, testingWebhook,
+    isTypePickerOpen, setIsTypePickerOpen, typePickerMode, setTypePickerMode,
+    targetFlowIdForAdd, setTargetFlowIdForAdd,
+    editingQuestionTag, setEditingQuestionTag, isEditingTitle, setIsEditingTitle,
+    titleInput, setTitleInput, copiedLink, responses, responsesTotal,
+    responsesTotalPages, responsesFilter, setResponsesFilter, responsesCounts,
+    responsesPage, setResponsesPage, loadingResponses, googleCalConnected,
+    googleCalEmail, deleteConfirm, setDeleteConfirm, handleSaveForm, handleManualSave,
+    handleConnectGoogleCalendar, handleDisconnectGoogleCalendar, handleTestWebhook,
+    handleAddQuestion, handleChangeQuestionType, openTypePickerForAdd,
+    openTypePickerForChange, handleAddFlow, handleRenameFlow, promptDeleteFlow,
+    handleMoveQuestionToFlow,
+    promptDeleteQuestion, promptDeleteEndingScreen,
+    promptDeleteWelcomeScreen, handleConfirmDelete, handleAddEndingScreen,
+    handleMoveQuestion, handleUpdateCurrentEndingScreen, handleToggleWelcomeScreen,
+    handleUpdateWelcomeScreen, handleUpdateCurrentQuestion, handleSaveTitle,
+    handleUpdateTheme, copyShareLink
   };
 }
-

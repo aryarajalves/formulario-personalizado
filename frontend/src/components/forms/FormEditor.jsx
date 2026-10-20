@@ -8,9 +8,12 @@ import {
   Loader2,
   List,
   Eye,
-  Settings
+  Settings,
+  Download,
+  Save
 } from 'lucide-react';
 import QuestionTypePickerModal from './QuestionTypePickerModal';
+import { useToast } from '../../context/ToastContext';
 import { useFormEditor } from './editor/useFormEditor';
 import EditorSidebar from './editor/EditorSidebar';
 import EditorCanvas from './editor/EditorCanvas';
@@ -26,6 +29,7 @@ export default function FormEditor({ formId, onBack }) {
     form,
     loading,
     saving,
+    hasUnsavedChanges,
     deviceView,
     setDeviceView,
     selectedQuestionIndex,
@@ -65,6 +69,7 @@ export default function FormEditor({ formId, onBack }) {
     deleteConfirm,
     setDeleteConfirm,
     handleSaveForm,
+    handleManualSave,
     handleConnectGoogleCalendar,
     handleDisconnectGoogleCalendar,
     handleTestWebhook,
@@ -72,12 +77,18 @@ export default function FormEditor({ formId, onBack }) {
     handleChangeQuestionType,
     openTypePickerForAdd,
     openTypePickerForChange,
+    handleAddFlow,
+    handleRenameFlow,
+    promptDeleteFlow,
+    handleMoveQuestionToFlow,
     promptDeleteQuestion,
     promptDeleteEndingScreen,
     handleConfirmDelete,
     handleAddEndingScreen,
+    handleMoveQuestion,
     handleUpdateCurrentEndingScreen,
     handleToggleWelcomeScreen,
+    promptDeleteWelcomeScreen,
     handleUpdateWelcomeScreen,
     handleUpdateCurrentQuestion,
     handleSaveTitle,
@@ -85,7 +96,43 @@ export default function FormEditor({ formId, onBack }) {
     copyShareLink
   } = useFormEditor(formId);
 
+  const { addToast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
   const [mobileEditorSection, setMobileEditorSection] = useState('questions');
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/v1/forms/${formId}/export`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao exportar formulário.');
+      }
+
+      const data = await response.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTitle = (form?.title || 'formulario').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+      a.download = `formulario_${safeTitle}_${form?.slug || 'export'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      addToast('Formulário exportado com sucesso!', 'success');
+    } catch (err) {
+      addToast(err.message || 'Erro ao exportar formulário.', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (loading || !form) {
     return (
@@ -170,7 +217,40 @@ export default function FormEditor({ formId, onBack }) {
           </button>
         </div>
 
-        <div className="navbar-right"></div>
+        <div className="navbar-right">
+          <button
+            type="button"
+            className="editor-export-btn"
+            onClick={handleExport}
+            disabled={isExporting}
+            data-testid="editor-export-btn"
+            title="Exportar estrutura do formulário em JSON"
+          >
+            {isExporting ? (
+              <Loader2 size={15} className="spinner-icon" />
+            ) : (
+              <Download size={15} />
+            )}
+            <span>Exportar</span>
+          </button>
+
+          <button
+            type="button"
+            className={`editor-save-btn ${hasUnsavedChanges ? 'has-changes' : ''}`}
+            onClick={handleManualSave}
+            disabled={saving}
+            data-testid="editor-save-btn"
+            title={hasUnsavedChanges ? "Você possui alterações não salvas" : "Salvar formulário"}
+          >
+            {saving ? (
+              <Loader2 size={15} className="spinner-icon" />
+            ) : (
+              <Save size={15} />
+            )}
+            <span>{saving ? 'Salvando...' : 'Salvar'}</span>
+            {hasUnsavedChanges && <span className="unsaved-dot" title="Alterações pendentes de salvamento" />}
+          </button>
+        </div>
       </header>
 
       {/* Renderização Condicional de Acordo com a Aba Selecionada */}
@@ -256,12 +336,17 @@ export default function FormEditor({ formId, onBack }) {
               selectedEndingIndex={selectedEndingIndex}
               setSelectedEndingIndex={setSelectedEndingIndex}
               handleToggleWelcomeScreen={handleToggleWelcomeScreen}
+              promptDeleteWelcomeScreen={promptDeleteWelcomeScreen}
               openTypePickerForAdd={openTypePickerForAdd}
+              handleMoveQuestion={handleMoveQuestion}
               promptDeleteQuestion={promptDeleteQuestion}
               handleAddEndingScreen={handleAddEndingScreen}
               promptDeleteEndingScreen={promptDeleteEndingScreen}
               handleUpdateTheme={handleUpdateTheme}
               saving={saving}
+              handleAddFlow={handleAddFlow}
+              handleRenameFlow={handleRenameFlow}
+              promptDeleteFlow={promptDeleteFlow}
             />
 
 
