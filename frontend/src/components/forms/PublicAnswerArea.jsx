@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown, Image as ImageIcon } from 'lucide-react';
 import { COUNTRY_CODES } from '../../constants/countryCodes';
 import { normalizeQuestionOptions } from '../../utils/logicJump';
+import InteractiveBookingCalendar from './calendar/InteractiveBookingCalendar';
 import './PublicAnswerArea.css';
 
 export default function PublicAnswerArea({
@@ -10,7 +11,8 @@ export default function PublicAnswerArea({
   selectedDdi,
   setSelectedDdi,
   onAnswerChange,
-  onNext
+  onNext,
+  formSlug
 }) {
   if (!currentQ) return null;
 
@@ -131,16 +133,12 @@ export default function PublicAnswerArea({
 
       {/* Google Agenda */}
       {currentQ.type === 'google_calendar' && (
-        <div className="public-google-cal-box">
-          <input
-            type="datetime-local"
-            value={currentAnswer || ''}
-            onChange={(e) => onAnswerChange(currentQ.id, e.target.value)}
-            className="public-input-field"
-            data-testid="calendar-input"
-            autoFocus
-          />
-        </div>
+        <InteractiveBookingCalendar
+          formSlug={formSlug}
+          value={currentAnswer || ''}
+          onChange={(val) => onAnswerChange(currentQ.id, val)}
+          onConfirm={onNext}
+        />
       )}
 
       {/* Texto Longo */}

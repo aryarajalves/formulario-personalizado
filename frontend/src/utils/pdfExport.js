@@ -1,3 +1,5 @@
+import { formatAnswerValue } from './formatUtils';
+
 /**
  * Utilitário para exportar o lead detalhado em PDF / impressão formatada
  */
@@ -26,7 +28,7 @@ export function printLeadPdf(selectedResponse, formSlug, formatDate) {
         ${qa.question_title || `Pergunta ${idx + 1}`}
       </div>
       <div style="font-size: 14px; color: #0f172a; white-space: pre-wrap; font-weight: 500;">
-        ${qa.answer || '—'}
+        ${formatAnswerValue(qa.answer)}
       </div>
     </div>
   `).join('');

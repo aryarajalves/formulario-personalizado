@@ -53,9 +53,14 @@ async def lifespan(app: FastAPI):
         try:
             if engine.dialect.name == "postgresql":
                 conn.execute(text("ALTER TABLE forms ADD COLUMN IF NOT EXISTS flows JSON DEFAULT '[]'::json;"))
+                conn.execute(text("ALTER TABLE forms ADD COLUMN IF NOT EXISTS google_calendar_settings JSON DEFAULT '{}'::json;"))
             else:
                 try:
                     conn.execute(text("ALTER TABLE forms ADD COLUMN flows JSON DEFAULT '[]';"))
+                except Exception:
+                    pass
+                try:
+                    conn.execute(text("ALTER TABLE forms ADD COLUMN google_calendar_settings JSON DEFAULT '{}';"))
                 except Exception:
                     pass
             conn.execute(text("ALTER TABLE invites ADD COLUMN IF NOT EXISTS used_by_email VARCHAR;"))

@@ -297,5 +297,48 @@ describe('ResultsTab Component', () => {
     expect(pill).toBeInTheDocument();
     expect(pill).toHaveTextContent('Concluído (Não passou)');
   });
+
+  it('formats Google Calendar ISO datetime to dd/MM/yy HH:mm in table chips and in details modal', () => {
+    const calendarResponses = [
+      {
+        id: 101,
+        contact_name: 'Aryaraj Alves Fernandes',
+        contact_email: 'aryaraj@teste.com',
+        contact_phone: '+55 85988146141',
+        status: 'CONCLUIDO',
+        created_at: '2026-10-21T12:00:00Z',
+        answers: [
+          {
+            question_title: 'Você já fez algum curso ou mentoria?',
+            answer: '2026-10-23T13:00:00-03:00'
+          }
+        ]
+      }
+    ];
+
+    render(
+      <ResultsTab
+        responses={calendarResponses}
+        responsesPage={1}
+        responsesTotal={1}
+        responsesTotalPages={1}
+        loadingResponses={false}
+        setResponsesPage={vi.fn()}
+        onGoToShare={vi.fn()}
+      />
+    );
+
+    // Valida que no chip da tabela aparece formatado como dd/MM/yy HH:mm (23/10/26 13:00)
+    expect(screen.getByText('23/10/26 13:00')).toBeInTheDocument();
+    expect(screen.queryByText('2026-10-23T13:00:00-03:00')).toBeNull();
+
+    // Abre o modal de detalhes
+    fireEvent.click(screen.getByTestId('view-details-btn-0'));
+
+    // Valida que dentro do modal também aparece como 23/10/26 13:00
+    const modalAnswer = screen.getByTestId('modal-qa-item-0');
+    expect(modalAnswer).toHaveTextContent('23/10/26 13:00');
+    expect(modalAnswer).not.toHaveTextContent('2026-10-23T13:00:00-03:00');
+  });
 });
 

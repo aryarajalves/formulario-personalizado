@@ -11,6 +11,8 @@ class FormCreate(FormBase):
     welcome_screen: Optional[Dict[str, Any]] = None
     ending_screens: Optional[List[Dict[str, Any]]] = []
     theme: Optional[Dict[str, Any]] = None
+    webhook_url: Optional[str] = None
+    google_calendar_settings: Optional[Dict[str, Any]] = None
 
 class FormUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
@@ -23,6 +25,7 @@ class FormUpdate(BaseModel):
     webhook_url: Optional[str] = None
     google_calendar_connected: Optional[bool] = None
     google_calendar_email: Optional[str] = None
+    google_calendar_settings: Optional[Dict[str, Any]] = None
 
 class FormResponse(FormBase):
     model_config = ConfigDict(from_attributes=True)
@@ -40,6 +43,7 @@ class FormResponse(FormBase):
     webhook_url: Optional[str] = None
     google_calendar_connected: bool = False
     google_calendar_email: Optional[str] = None
+    google_calendar_settings: Optional[Dict[str, Any]] = None
     user_id: int
     created_at: datetime
     updated_at: datetime
@@ -56,6 +60,7 @@ class FormExportResponse(BaseModel):
     flows: List[Dict[str, Any]] = []
     ending_screens: List[Dict[str, Any]] = []
     webhook_url: Optional[str] = None
+    google_calendar_settings: Optional[Dict[str, Any]] = None
 
 class FormImportRequest(BaseModel):
     title: Optional[str] = None
@@ -68,6 +73,11 @@ class FormImportRequest(BaseModel):
     flows: Optional[List[Dict[str, Any]]] = None
     ending_screens: Optional[List[Dict[str, Any]]] = None
     webhook_url: Optional[str] = None
+    google_calendar_settings: Optional[Dict[str, Any]] = None
+
+class BulkDeleteFormsRequest(BaseModel):
+    form_ids: List[int]
+
 
 
 

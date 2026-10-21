@@ -42,17 +42,18 @@ A solução oferece uma experiência intuitiva no estilo *Typeform* com transiç
 - **Exportação de Dados:** Exportação individual em **PDF** formatado para impressão/arquivamento e exportação global em planilha **CSV** (compatível com Excel).
 - **Timestamps em Horário de Brasília (America/Sao_Paulo):** Exibição cronológica ajustada no fuso local (UTC-3).
 
-### 🔗 Integrações & Automação
-- **Webhooks Customizados com Logs de Auditoria:** Disparo de payloads HTTP JSON automáticos com histórico de disparos, medição de latência em milissegundos, status HTTP e botão de teste manual.
-- **Google Calendar Sync com Criptografia em Repouso:** Sincronização direta de horários agendados com tokens OAuth criptografados via Fernet (AES-128-CBC + HMAC-SHA256).
+### 🔗 Integrações, Agendamento Inteligente & Automação
+- **Google Calendar Sync & Agendador Completo (5 Sub-abas):**
+  - **Horários e Turnos:** Configuração de turnos múltiplos (ex: manhã e tarde) com pausas automáticas para almoço e seleção de dias da semana;
+  - **Personalização de Evento & Sincronização de Cores:** Título e briefing dinâmicos com tags inteligentes (`{nome}`, `{formulario}`, `{email}`, `{telefone}`, `{respostas}`) e mapeamento automático das 11 cores oficiais do Google Agenda para emojis visuais (ex: `🟢 Reunião com {nome}`), garantindo que tanto o expert quanto o lead convidado visualizem a mesma cor nas suas agendas e e-mails;
+  - **Agrupamento Inteligente de Horários:** Horários livres separados por turnos pulando linha em intervalos/pausas de almoço com divisor sutil (`── Intervalo ──`), mantendo a visualização organizada na prévia e no formulário público;
+  - **Prévia do Calendário em Tempo Real:** Live preview visual interativo para validação instantânea da experiência do respondente;
+  - **Agendamentos Realizados com Paginação & Exclusão em Cascata:** Tabela de reuniões marcadas com fatiamento de 20 itens por página, formatação amigável brasileira `dd/MM/yy HH:mm` e exclusão em cascata (cancela o evento no Google Agenda, deleta lembretes pendentes e remove a resposta);
+  - **Lembretes & Webhooks Agendados com Paginação:** Disparo automático de lembretes matinais (ex: às 09:00 do dia da reunião) e de antecedência imediata (15, 30, 45, 60 min antes) via worker em background (APScheduler), histórico de disparos em tempo real com paginação de 20 itens por página, status HTTP e motivo do retorno, edição de informações e data de disparo, exclusão com popup seguro e disparo manual sob demanda com confirmação prévia;
+  - **Filtro FreeBusy:** Consulta de disponibilidade em tempo real via Google Calendar API ocultando horários ocupados.
+- **Webhooks Customizados com Logs de Auditoria:** Disparo de payloads HTTP JSON automáticos com histórico de auditoria, medição de latência em milissegundos, status HTTP e botão de teste manual.
+- **Gestão e Exclusão em Lote (Bulk Delete):** Seleção múltipla de formulários na listagem com barra de ações flutuante, modal de confirmação com backdrop seguro e exclusão em lote com proteção anti-IDOR.
 - **Lógica Condicional (Saltos Lógicos / Branching):** Redirecionamento dinâmico e inteligente entre perguntas ou finalização com base nas respostas selecionadas pelo participante.
-
-### 📊 Painel de Resultados & Análise (Analytics)
-- **Métricas em Tempo Real de Alta Performance:** Total de respostas, respostas completas vs. parciais, taxa de conclusão e visualizações calculadas via query agregada otimizada.
-- **Filtros Avançados:** Filtragem rápida por status (`Todos`, `Finalizados`, `Parciais`) e busca textual por dados do lead.
-- **Visualização Detalhada em Modal:** Modal dinâmico para inspecionar respostas completas de cada participante individualmente.
-- **Exportação de Dados:** Exportação individual em **PDF** formatado para impressão/arquivamento e exportação global em **CSV** e **JSON**.
-- **Timestamps em Horário de Brasília (America/Sao_Paulo):** Exibição cronológica ajustada no fuso local (UTC-3).
 
 ### 🛡️ Administração, Segurança & Infraestrutura
 - **Segurança Reforçada (Anti-SSRF & Rate Limiting):** Bloqueio de IP spoofing/DNS rebinding em requisições de webhook e limitação granular de taxa de requisições por IP.

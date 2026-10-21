@@ -84,4 +84,74 @@ describe('WebhookLogsSection Component', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
+
+  it('initially displays only first 2 logs when total > 2 and toggles show more / show less', async () => {
+    const mockFourLogs = [
+      { id: 1, webhook_url: 'https://exemplo.com/1', status_code: 200, success: true, created_at: '20/10 10:00' },
+      { id: 2, webhook_url: 'https://exemplo.com/2', status_code: 200, success: true, created_at: '20/10 10:01' },
+      { id: 3, webhook_url: 'https://exemplo.com/3', status_code: 500, success: false, created_at: '20/10 10:02' },
+      { id: 4, webhook_url: 'https://exemplo.com/4', status_code: 200, success: true, created_at: '20/10 10:03' }
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ logs: mockFourLogs, total: 4 })
+    });
+
+    render(<WebhookLogsSection formId={1} webhookUrl="https://exemplo.com" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('webhook-log-item-1')).toBeDefined();
+      expect(screen.getByTestId('webhook-log-item-2')).toBeDefined();
+    });
+
+    // Logs 3 e 4 não devem estar visíveis inicialmente
+    expect(screen.queryByTestId('webhook-log-item-3')).toBeNull();
+    expect(screen.queryByTestId('webhook-log-item-4')).toBeNull();
+
+    // Botão de expandir lista
+    const expandListBtn = screen.getByTestId('toggle-webhook-logs-expand-btn');
+    expect(expandListBtn.textContent).toContain('Mostrar mais (2 disparos restantes)');
+
+    // Clica para expandir
+    fireEvent.click(expandListBtn);
+
+    // Agora todos os 4 logs estão no DOM
+    expect(screen.getByTestId('webhook-log-item-3')).toBeDefined();
+    expect(screen.getByTestId('webhook-log-item-4')).toBeDefined();
+    expect(expandListBtn.textContent).toContain('Recolher para os 2 primeiros disparos');
+
+    // Clica para recolher novamente
+    fireEvent.click(expandListBtn);
+    expect(screen.queryByTestId('webhook-log-item-3')).toBeNull();
+    expect(screen.queryByTestId('webhook-log-item-4')).toBeNull();
+  });
+
+  it('collapses and expands entire webhook logs section from header button', async () => {
+    const mockLogs = [
+      { id: 1, webhook_url: 'https://exemplo.com/1', status_code: 200, success: true, created_at: '20/10 10:00' }
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ logs: mockLogs, total: 1 })
+    });
+
+    render(<WebhookLogsSection formId={1} webhookUrl="https://exemplo.com" />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('webhook-log-item-1')).toBeDefined();
+    });
+
+    // Clica para recolher toda a seção
+    const toggleSectionBtn = screen.getByTestId('toggle-section-collapse-btn');
+    fireEvent.click(toggleSectionBtn);
+
+    // Lista não deve mais estar visível
+    expect(screen.queryByTestId('webhook-logs-list')).toBeNull();
+
+    // Clica novamente para expandir
+    fireEvent.click(toggleSectionBtn);
+    expect(screen.getByTestId('webhook-log-item-1')).toBeDefined();
+  });
 });

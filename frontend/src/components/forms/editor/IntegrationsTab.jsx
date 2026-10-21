@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ExternalLink, Calendar, Loader2 } from 'lucide-react';
 import WebhookLogsSection from './WebhookLogsSection';
+import GoogleCalendarSettings from './GoogleCalendarSettings';
 
 export default function IntegrationsTab({
   formId,
+  formSlug,
   webhookUrl,
   setWebhookUrl,
   saving,
@@ -15,6 +17,8 @@ export default function IntegrationsTab({
   onConnectGoogleCalendar,
   onDisconnectGoogleCalendar
 }) {
+  const [confirmDisconnectOpen, setConfirmDisconnectOpen] = useState(false);
+
   return (
     <div className="integrations-view-container" data-testid="integrations-view">
       <div className="integrations-header">
@@ -136,7 +140,7 @@ export default function IntegrationsTab({
                   <button
                     type="button"
                     className="save-webhook-btn connected-cal-btn"
-                    onClick={onDisconnectGoogleCalendar}
+                    onClick={() => setConfirmDisconnectOpen(true)}
                     data-testid="disconnect-google-cal-btn"
                   >
                     Desconectar Conta
@@ -167,9 +171,76 @@ export default function IntegrationsTab({
                   : 'Você será redirecionado para a página oficial da Google para autorizar o acesso à sua agenda com total segurança (OAuth 2.0).'}
               </span>
             </div>
+
+            {/* Disponibilidade e Horários de Atendimento do Expert */}
+            <GoogleCalendarSettings 
+              formId={formId} 
+              formSlug={formSlug} 
+              googleCalConnected={googleCalConnected}
+              googleCalEmail={googleCalEmail}
+              formWebhookUrl={webhookUrl}
+            />
           </div>
         </div>
       </div>
+
+      {/* Popup Centralizado de Confirmação para Desconectar Google Agenda */}
+      {confirmDisconnectOpen && (
+        <div
+          className="modal-overlay"
+          data-testid="confirm-disconnect-google-modal-overlay"
+          onClick={(e) => {
+            // Regra obrigatória: NÃO fecha ao clicar no backdrop/fora do painel
+            e.stopPropagation();
+          }}
+        >
+          <div
+            className="modal-content confirm-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-disconnect-google-title"
+            data-testid="confirm-disconnect-google-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="confirm-delete-icon-wrapper"
+              style={{ backgroundColor: '#fff7ed', borderColor: '#ffedd5', color: '#ea580c' }}
+            >
+              <Calendar size={28} />
+            </div>
+
+            <h3 id="confirm-disconnect-google-title" className="confirm-delete-title" data-testid="confirm-disconnect-title">
+              Desconectar Google Agenda
+            </h3>
+
+            <p className="confirm-delete-message" data-testid="confirm-disconnect-message">
+              Tem certeza que deseja desconectar a conta <strong>{googleCalEmail || 'Google'}</strong> deste formulário? Novos agendamentos não serão mais sincronizados automaticamente na sua agenda.
+            </p>
+
+            <div className="confirm-delete-actions">
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={() => setConfirmDisconnectOpen(false)}
+                data-testid="cancel-disconnect-google-btn"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="confirm-danger-btn"
+                onClick={() => {
+                  setConfirmDisconnectOpen(false);
+                  if (onDisconnectGoogleCalendar) onDisconnectGoogleCalendar();
+                }}
+                data-testid="confirm-disconnect-google-btn"
+              >
+                Sim, Desconectar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

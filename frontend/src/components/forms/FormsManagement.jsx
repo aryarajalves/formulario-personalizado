@@ -2,23 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
-  ExternalLink, 
-  MoreVertical, 
   FileText, 
-  Trash2, 
   Loader2, 
-  SlidersHorizontal,
-  FolderPlus,
   ArrowUpDown,
   LayoutGrid,
   List,
-  Edit3,
-  Upload,
-  Download
+  Upload
 } from 'lucide-react';
 import CreateFormModal from './CreateFormModal';
 import ImportFormModal from './ImportFormModal';
 import FormEditor from './FormEditor';
+import BulkDeleteModal from './modals/BulkDeleteModal';
+import BulkActionBar from './management/BulkActionBar';
+import FormTableRow from './management/FormTableRow';
 import { useToast } from '../../context/ToastContext';
 import './FormsManagement.css';
 
@@ -29,10 +25,14 @@ export default function FormsManagement({ onEditStateChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
   const [exportingId, setExportingId] = useState(null);
-  const [deleteConfirmForm, setDeleteConfirmForm] = useState(null);
   const [editingFormId, setEditingFormId] = useState(null);
+
+  // Estados para seleção e exclusão (Individual e Múltipla/Bulk)
+  const [selectedFormIds, setSelectedFormIds] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null); // null | { mode: 'single', form } | { mode: 'bulk', ids: [] }
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -147,35 +147,81 @@ export default function FormsManagement({ onEditStateChange }) {
     }
   };
 
-  const handleDeleteForm = async (formId) => {
-    try {
-      setDeletingId(formId);
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/v1/forms/${formId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao excluir formulário.');
-      }
-
-      setForms((prev) => prev.filter((f) => f.id !== formId));
-      addToast('Formulário removido com sucesso.', 'success');
-      setDeleteConfirmForm(null);
-    } catch (err) {
-      addToast(err.message || 'Erro ao excluir.', 'error');
-    } finally {
-      setDeletingId(null);
-      setActiveDropdown(null);
-    }
+  // Manipulação de seleção
+  const handleToggleSelectForm = (id) => {
+    setSelectedFormIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   const filteredForms = forms.filter((form) =>
     form.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const visibleIds = filteredForms.map((f) => f.id);
+  const isAllSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedFormIds.includes(id));
+  const isIndeterminate = !isAllSelected && visibleIds.some((id) => selectedFormIds.includes(id));
+
+  const handleSelectAllVisible = () => {
+    if (isAllSelected) {
+      setSelectedFormIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    } else {
+      setSelectedFormIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  // Exclusão Unificada (Individual e Múltipla)
+  const handleExecuteDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      setDeleteLoading(true);
+      const token = localStorage.getItem('auth_token');
+
+      if (deleteTarget.mode === 'single') {
+        const formId = deleteTarget.form.id;
+        const response = await fetch(`/api/v1/forms/${formId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao excluir formulário.');
+        }
+
+        setForms((prev) => prev.filter((f) => f.id !== formId));
+        setSelectedFormIds((prev) => prev.filter((id) => id !== formId));
+        addToast('Formulário removido com sucesso.', 'success');
+      } else {
+        const ids = deleteTarget.ids;
+        const response = await fetch('/api/v1/forms/bulk-delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ form_ids: ids })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.detail || 'Erro ao excluir formulários.');
+        }
+
+        const resData = await response.json();
+        setForms((prev) => prev.filter((f) => !ids.includes(f.id)));
+        setSelectedFormIds((prev) => prev.filter((id) => !ids.includes(id)));
+        addToast(resData.message || `${ids.length} formulários excluídos com sucesso.`, 'success');
+      }
+
+      setDeleteTarget(null);
+    } catch (err) {
+      addToast(err.message || 'Erro ao excluir.', 'error');
+    } finally {
+      setDeleteLoading(false);
+      setActiveDropdown(null);
+    }
+  };
 
   const formatDate = (isoString) => {
     if (!isoString) return '—';
@@ -205,6 +251,11 @@ export default function FormsManagement({ onEditStateChange }) {
       />
     );
   }
+
+  const deleteCount = deleteTarget?.mode === 'single' ? 1 : deleteTarget?.ids?.length || 0;
+  const deleteSingleTitle = deleteTarget?.mode === 'single'
+    ? deleteTarget?.form?.title
+    : (deleteCount === 1 ? forms.find((f) => f.id === deleteTarget?.ids?.[0])?.title : null);
 
   return (
     <div className="forms-management-container" data-testid="forms-management-view">
@@ -265,9 +316,29 @@ export default function FormsManagement({ onEditStateChange }) {
           </div>
         </div>
 
+        {/* Barra de Ações em Massa (Bulk) */}
+        <BulkActionBar
+          selectedCount={selectedFormIds.length}
+          onClearSelection={() => setSelectedFormIds([])}
+          onOpenDeleteModal={() => setDeleteTarget({ mode: 'bulk', ids: [...selectedFormIds] })}
+        />
+
         {/* Tabela / Lista de Formulários */}
         <div className="forms-table-card">
           <div className="forms-table-header">
+            <div className="col-checkbox">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(el) => {
+                  if (el) el.indeterminate = isIndeterminate;
+                }}
+                onChange={handleSelectAllVisible}
+                aria-label="Selecionar todos os formulários visíveis"
+                data-testid="select-all-forms-checkbox"
+                className="form-checkbox"
+              />
+            </div>
             <div className="col-info">FORMULÁRIO</div>
             <div className="col-responses">RESPOSTAS</div>
             <div className="col-completion">CONCLUSÃO</div>
@@ -298,107 +369,22 @@ export default function FormsManagement({ onEditStateChange }) {
           ) : (
             <div className="forms-list" data-testid="forms-list">
               {filteredForms.map((form) => (
-                <div 
-                  key={form.id} 
-                  className="form-row-item clickable-row" 
-                  onClick={() => setEditingFormId(form.id)}
-                  title="Clique para editar este formulário"
-                  data-testid={`form-item-${form.id}`}
-                >
-                  {/* Ícone e Título */}
-                  <div className="form-info-col">
-                    <div className="form-thumbnail">
-                      <FileText size={20} />
-                    </div>
-                    <div className="form-text-details">
-                      <div className="form-title-row">
-                        <span className="form-name">{form.title}</span>
-                        <span className="form-status-badge">{form.status || 'PUBLICADO'}</span>
-                      </div>
-                      <a
-                        href={`/form/${form.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="form-link"
-                        onClick={(e) => e.stopPropagation()}
-                        data-testid={`form-public-link-${form.id}`}
-                        title="Abrir formulário público"
-                      >
-                        {window.location.origin}/form/{form.slug}
-                        <ExternalLink size={12} className="link-icon" />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Respostas */}
-                  <div className="form-responses-col">
-                    <span>{form.responses_count > 0 ? form.responses_count : '—'}</span>
-                  </div>
-
-                  {/* Conclusão */}
-                  <div className="form-completion-col">
-                    <span>
-                      {form.completion_rate > 0 ? `${form.completion_rate.toFixed(1)}%` : '0%'}
-                    </span>
-                  </div>
-
-                  {/* Data de Atualização */}
-                  <div className="form-updated-col">
-                    <span>{formatDate(form.updated_at || form.created_at)}</span>
-                  </div>
-
-                  {/* Ações */}
-                  <div className="form-actions-col" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className="form-menu-trigger"
-                      onClick={() => setActiveDropdown(activeDropdown === form.id ? null : form.id)}
-                      data-testid={`form-menu-trigger-${form.id}`}
-                    >
-                      <MoreVertical size={16} />
-                    </button>
-
-                    {activeDropdown === form.id && (
-                      <div className="form-dropdown-menu">
-                        <button
-                          type="button"
-                          className="dropdown-edit-btn"
-                          onClick={() => {
-                            setActiveDropdown(null);
-                            setEditingFormId(form.id);
-                          }}
-                          data-testid={`edit-form-btn-${form.id}`}
-                        >
-                          <Edit3 size={14} />
-                          <span>Editar</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="dropdown-export-btn"
-                          onClick={() => handleExportForm(form)}
-                          disabled={exportingId === form.id}
-                          data-testid={`export-form-btn-${form.id}`}
-                        >
-                          {exportingId === form.id ? (
-                            <Loader2 size={14} className="spinner-icon" />
-                          ) : (
-                            <Download size={14} />
-                          )}
-                          <span>Exportar</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="dropdown-delete-btn"
-                          onClick={() => setDeleteConfirmForm(form)}
-                          data-testid={`delete-form-btn-${form.id}`}
-                        >
-                          <Trash2 size={14} />
-                          <span>Excluir</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <FormTableRow
+                  key={form.id}
+                  form={form}
+                  isSelected={selectedFormIds.includes(form.id)}
+                  onToggleSelect={handleToggleSelectForm}
+                  onEdit={(id) => setEditingFormId(id)}
+                  onExport={handleExportForm}
+                  isExporting={exportingId === form.id}
+                  onDelete={(f) => {
+                    setActiveDropdown(null);
+                    setDeleteTarget({ mode: 'single', form: f });
+                  }}
+                  isMenuOpen={activeDropdown === form.id}
+                  onToggleMenu={() => setActiveDropdown(activeDropdown === form.id ? null : form.id)}
+                  formatDate={formatDate}
+                />
               ))}
             </div>
           )}
@@ -419,44 +405,15 @@ export default function FormsManagement({ onEditStateChange }) {
         onImportSuccess={handleImportForm}
       />
 
-      {/* Modal Centralizado de Confirmação de Deleção com Backdrop Translúcido */}
-      {deleteConfirmForm && (
-        <div className="delete-confirm-overlay" data-testid="delete-confirm-overlay">
-          <div className="delete-confirm-card" data-testid="delete-confirm-card">
-            <h3>Excluir formulário?</h3>
-            <p>
-              Tem certeza que deseja excluir <strong>"{deleteConfirmForm.title}"</strong>? Esta ação
-              não poderá ser desfeita.
-            </p>
-            <div className="delete-confirm-actions">
-              <button
-                type="button"
-                className="cancel-delete-btn"
-                onClick={() => setDeleteConfirmForm(null)}
-                disabled={deletingId === deleteConfirmForm.id}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="confirm-delete-btn"
-                onClick={() => handleDeleteForm(deleteConfirmForm.id)}
-                disabled={deletingId === deleteConfirmForm.id}
-                data-testid="confirm-delete-submit-btn"
-              >
-                {deletingId === deleteConfirmForm.id ? (
-                  <>
-                    <Loader2 className="spinner-icon" size={14} />
-                    <span>Excluindo...</span>
-                  </>
-                ) : (
-                  'Excluir'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Centralizado de Confirmação de Deleção (Individual e Bulk) */}
+      <BulkDeleteModal
+        isOpen={!!deleteTarget}
+        count={deleteCount}
+        singleFormTitle={deleteSingleTitle}
+        loading={deleteLoading}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleExecuteDelete}
+      />
     </div>
   );
 }

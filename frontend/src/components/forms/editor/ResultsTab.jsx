@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { printLeadPdf } from '../../../utils/pdfExport';
+import { formatAnswerValue } from '../../../utils/formatUtils';
 
 export default function ResultsTab({
   formId,
@@ -248,9 +249,9 @@ export default function ResultsTab({
                                 <span
                                   key={aIdx}
                                   className="answer-chip"
-                                  title={`${ans.question_title || `Pergunta ${aIdx + 1}`}: ${ans.answer}`}
+                                  title={`${ans.question_title || `Pergunta ${aIdx + 1}`}: ${formatAnswerValue(ans.answer)}`}
                                 >
-                                  <strong>{ans.question_title || `Q${aIdx + 1}`}:</strong> {ans.answer || '—'}
+                                  <strong>{ans.question_title || `Q${aIdx + 1}`}:</strong> {formatAnswerValue(ans.answer)}
                                 </span>
                               ))}
 
@@ -408,7 +409,7 @@ export default function ResultsTab({
                         <span className="qa-title">{qa.question_title || `Pergunta ${qIndex + 1}`}</span>
                       </div>
                       <div className="response-qa-answer">
-                        <p>{qa.answer || '—'}</p>
+                        <p>{formatAnswerValue(qa.answer)}</p>
                       </div>
                     </div>
                   ))}

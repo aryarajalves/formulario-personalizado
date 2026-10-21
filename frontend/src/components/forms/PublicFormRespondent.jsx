@@ -61,7 +61,11 @@ export default function PublicFormRespondent({ slug }) {
 
     // Se obrigatória e sem resposta
     if (currentQ?.required && !rawVal) {
-      setFieldError('Por favor, responda esta questão antes de avançar.');
+      if (currentQ?.type === 'google_calendar') {
+        setFieldError('Por favor, selecione uma data e um horário disponível antes de avançar.');
+      } else {
+        setFieldError('Por favor, responda esta questão antes de avançar.');
+      }
       return;
     }
     if (rawVal) {
@@ -112,6 +116,7 @@ export default function PublicFormRespondent({ slug }) {
         return {
           question_id: q.id,
           question_title: q.title,
+          question_type: q.type,
           answer: val
         };
       });
@@ -160,6 +165,7 @@ export default function PublicFormRespondent({ slug }) {
         return {
           question_id: q.id,
           question_title: q.title,
+          question_type: q.type,
           answer: val || (q.type === 'statement' ? '(Mensagem de Término)' : '')
         };
       });
@@ -327,6 +333,7 @@ export default function PublicFormRespondent({ slug }) {
             setSelectedDdi={setSelectedDdi}
             onAnswerChange={handleAnswerChange}
             onNext={handleNext}
+            formSlug={slug}
           />
 
           {/* Mensagem de Erro de Validação Visual */}

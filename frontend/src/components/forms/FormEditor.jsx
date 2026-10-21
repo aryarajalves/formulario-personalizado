@@ -257,6 +257,7 @@ export default function FormEditor({ formId, onBack }) {
       {editorTab === 'integrar' ? (
         <IntegrationsTab
           formId={formId}
+          formSlug={form?.slug}
           webhookUrl={webhookUrl}
           setWebhookUrl={setWebhookUrl}
           saving={saving}

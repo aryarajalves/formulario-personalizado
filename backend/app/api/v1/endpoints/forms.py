@@ -14,17 +14,17 @@ from app.core.database import get_db
 from app.api.v1.endpoints.users import get_current_user
 from app.models.user import User
 from app.models.form import Form, FormResponseData, WebhookDeliveryLog
-from app.schemas.form import FormCreate, FormResponse, FormUpdate, FormExportResponse, FormImportRequest
+from app.schemas.form import FormCreate, FormResponse, FormUpdate, FormExportResponse, FormImportRequest, BulkDeleteFormsRequest
 from app.core.logger import logger
 from app.core.config import settings
 from app.core.rate_limiter import rate_limiter
 from app.core.encryption import encrypt_token, decrypt_token
 from app.core.ssrf import is_ssrf_safe_url
 from app.services import google_calendar
+from app.core.formatters import format_answer_for_display
 
 router = APIRouter(prefix="/forms", tags=["forms"])
 BRASILIA_TZ = ZoneInfo("America/Sao_Paulo")
-
 
 def generate_unique_slug(db: Session, length: int = 8) -> str:
     for _ in range(10):
@@ -75,6 +75,8 @@ def create_form(
         welcome_screen=form_in.welcome_screen or {},
         ending_screens=(form_in.ending_screens or [])[:1],
         theme=form_in.theme or {},
+        webhook_url=form_in.webhook_url,
+        google_calendar_settings=form_in.google_calendar_settings or {},
         user_id=current_user.id
     )
     db.add(new_form)
@@ -233,6 +235,9 @@ def update_form(
 
     if form_in.google_calendar_email is not None:
         form.google_calendar_email = form_in.google_calendar_email.strip() or None
+
+    if form_in.google_calendar_settings is not None:
+        form.google_calendar_settings = form_in.google_calendar_settings
 
     db.commit()
     db.refresh(form)
@@ -395,6 +400,48 @@ def disconnect_google_calendar(
     logger.info(f"Google Calendar desconectado do formulário {form.id} por {current_user.email}")
     return {"success": True, "message": "Google Agenda desconectado com sucesso."}
 
+@router.get("/{form_id}/integrations/google-calendar/settings")
+def get_google_calendar_settings(
+    form_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retorna as configurações de horários de atendimento do formulário."""
+    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Formulário não encontrado.")
+    
+    settings_data = {**google_calendar.DEFAULT_CALENDAR_SETTINGS, **(form.google_calendar_settings or {})}
+    return {"settings": settings_data}
+
+@router.put("/{form_id}/integrations/google-calendar/settings")
+def update_google_calendar_settings(
+    form_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Atualiza as regras de atendimento do expert (dias da semana, horários, duração)."""
+    form = db.query(Form).filter(Form.id == form_id, Form.user_id == current_user.id).first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Formulário não encontrado.")
+    
+    current_settings = {**google_calendar.DEFAULT_CALENDAR_SETTINGS, **(form.google_calendar_settings or {})}
+    allowed_fields = [
+        "working_days", "time_ranges", "start_time", "end_time",
+        "slot_duration", "buffer_minutes", "event_title", "event_description", "event_color_id",
+        "reminder_morning_enabled", "reminder_morning_time",
+        "reminder_before_enabled", "reminder_before_minutes", "reminder_webhook_url"
+    ]
+    for field in allowed_fields:
+        if field in payload:
+            current_settings[field] = payload[field]
+
+    form.google_calendar_settings = dict(current_settings)
+    db.commit()
+    logger.info(f"Configurações de atendimento do Google Agenda salvas para o formulário {form_id} por {current_user.email}")
+    return {"success": True, "settings": current_settings}
+
 @router.delete("/{form_id}", status_code=status.HTTP_200_OK)
 
 def delete_form(
@@ -412,6 +459,33 @@ def delete_form(
     logger.info(f"Formulário {form_id} removido com sucesso por {current_user.email}")
     return {"message": "Formulário removido com sucesso.", "id": form_id}
 
+@router.post("/bulk-delete", status_code=status.HTTP_200_OK)
+def bulk_delete_forms(
+    payload: BulkDeleteFormsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove múltiplos formulários pertencentes ao usuário autenticado."""
+    if not payload.form_ids:
+        raise HTTPException(status_code=400, detail="Nenhum formulário informado para exclusão.")
+
+    forms_to_delete = db.query(Form).filter(
+        Form.id.in_(payload.form_ids),
+        Form.user_id == current_user.id
+    ).all()
+
+    if not forms_to_delete:
+        raise HTTPException(status_code=404, detail="Nenhum formulário encontrado para excluir.")
+
+    deleted_ids = []
+    for f in forms_to_delete:
+        deleted_ids.append(f.id)
+        db.delete(f)
+
+    db.commit()
+    logger.info(f"{len(deleted_ids)} formulários excluídos em lote por {current_user.email} (IDs: {deleted_ids})")
+    return {"message": f"{len(deleted_ids)} formulários excluídos com sucesso.", "deleted_ids": deleted_ids}
+
 @router.get("/public/{slug}")
 def get_public_form(slug: str, db: Session = Depends(get_db)):
     """Retorna dados públicos do formulário para o usuário final responder."""
@@ -427,10 +501,33 @@ def get_public_form(slug: str, db: Session = Depends(get_db)):
         "flows": form.flows or [],
         "welcome_screen": form.welcome_screen or {},
         "ending_screens": form.ending_screens or [],
-        "theme": form.theme or {}
+        "theme": form.theme or {},
+        "google_calendar_connected": bool(form.google_calendar_connected),
+        "google_calendar_settings": form.google_calendar_settings or {}
     }
 
+@router.get(
+    "/public/{slug}/calendar-slots",
+    dependencies=[Depends(rate_limiter(max_requests=settings.RATE_LIMIT_PUBLIC_FORMS, key_prefix="public_forms"))]
+)
+def get_public_calendar_slots(
+    slug: str,
+    start_date: str = Query(None, description="Data inicial YYYY-MM-DD"),
+    end_date: str = Query(None, description="Data final YYYY-MM-DD"),
+    db: Session = Depends(get_db)
+):
+    """Retorna os horários disponíveis para o formulário público cruzando com a agenda Google."""
+    form = db.query(Form).filter(Form.slug == slug).first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Formulário não encontrado.")
 
+    slots_data = google_calendar.get_available_slots(
+        form=form,
+        start_date_str=start_date or "",
+        end_date_str=end_date or "",
+        db=db
+    )
+    return slots_data
 
 @router.post(
     "/public/{slug}/save-partial",
@@ -506,7 +603,6 @@ def save_partial_form(slug: str, payload: dict, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(response_record)
     return {"success": True, "response_id": response_record.id, "status": response_record.status}
-
 
 def dispatch_webhook_in_background(form_id: int, webhook_url: str, payload: dict, form_slug: str, response_id: int = None):
     """Executa o envio do webhook de forma assíncrona em background e persiste o log de auditoria no banco."""
@@ -668,8 +764,31 @@ def submit_public_form(
         )
         logger.info(f"Webhook enfileirado em background para {form.webhook_url} (Formulário: {form.slug})")
 
-    return {"success": True, "message": "Respostas enviadas com sucesso!", "id": response_record.id}
+    # Disparo de criação de evento no Google Agenda em background
+    if form.google_calendar_connected:
+        background_tasks.add_task(
+            google_calendar.process_calendar_booking_for_submission,
+            form_id=form.id,
+            answers=answers,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            response_id=response_record.id
+        )
+        logger.info(f"Processamento de agendamento do Google Calendar agendado em background para o form {form.id}")
 
+    # Agenda lembretes automáticos de reunião via Webhook
+    try:
+        google_calendar.schedule_booking_webhook_reminders(
+            db=db,
+            form=form,
+            response_record=response_record,
+            answers=answers
+        )
+    except Exception as rem_err:
+        logger.error(f"Erro ao agendar lembretes de reunião para o form {form.id}: {rem_err}")
+
+    return {"success": True, "message": "Respostas enviadas com sucesso!", "id": response_record.id}
 
 @router.get("/{form_id}/responses")
 def get_form_responses(
@@ -748,7 +867,6 @@ def get_form_responses(
         }
     }
 
-
 @router.get("/{form_id}/responses/export")
 def export_form_responses_csv(
     form_id: int,
@@ -809,7 +927,7 @@ def export_form_responses_csv(
             q_id = q.get("id")
             q_title = q.get("title") or f"Pergunta {i+1}"
             val = answers_map.get(q_id) or answers_map.get(q_title) or ""
-            answers_cols.append(val)
+            answers_cols.append(format_answer_for_display(val))
 
         status_display = "Concluído (Não passou)" if r.status == "CONCLUIDO_NAO_PASSOU" else ("Concluído" if r.status == "CONCLUIDO" else "Parcial")
         row = [
@@ -832,7 +950,6 @@ def export_form_responses_csv(
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
-
 
 @router.get("/{form_id}/webhook/logs")
 def get_webhook_delivery_logs(
@@ -874,9 +991,3 @@ def get_webhook_delivery_logs(
         })
 
     return {"logs": result, "total": len(result)}
-
-
-
-
-
-

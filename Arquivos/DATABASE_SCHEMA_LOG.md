@@ -88,3 +88,29 @@ Registro de migrações e atualizações estruturais do banco de dados (PostgreS
 - **Tabelas Afetadas:**
   - `forms`: Adicionada coluna `flows` (JSON DEFAULT '[]').
 - **Script de Migração:** `backend/scripts/add_flows_column.py`
+
+---
+
+### [20/10/2026] - Configurações de Atendimento e Disponibilidade do Expert (Google Calendar)
+- **Tabelas Afetadas:**
+  - `forms`: Adicionada coluna `google_calendar_settings` (JSON DEFAULT '{}').
+- **Script de Migração:** `backend/scripts/add_google_calendar_settings_column.py`
+
+---
+
+### [21/10/2026] - Lembretes e Webhooks Agendados de Reunião
+- **Tabelas Criadas:**
+  - `scheduled_webhooks`: Armazenamento de disparos de webhook programados (`id`, `form_id`, `response_id`, `reminder_type`, `scheduled_for`, `webhook_url`, `payload`, `status`, `status_code`, `sent_at`, `error_message`, `created_at`).
+  - Índices criados: `idx_scheduled_webhooks_pending (status, scheduled_for)` e `idx_scheduled_webhooks_form_id (form_id)`.
+- **Script de Migração:** `backend/scripts/add_scheduled_webhooks_table.py`, `backend/scripts/add_status_code_to_scheduled_webhooks.py`
+
+---
+
+### [21/10/2026] - ID de Evento da Google Agenda para Cancelamento / Exclusão
+- **Tabelas Afetadas:**
+  - `form_responses`: Adicionada coluna `google_calendar_event_id` (VARCHAR(255) NULL) para rastrear e permitir o cancelamento do evento no calendário primário do Google Calendar quando um agendamento for excluído.
+- **Script de Migração:** `backend/scripts/add_google_calendar_event_id_column.py`
+
+
+
+

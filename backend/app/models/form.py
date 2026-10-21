@@ -25,6 +25,7 @@ class Form(Base):
     ending_screens = Column(JSON, default=list, nullable=False)
     flows = Column(JSON, default=list, nullable=False)
     theme = Column(JSON, default=dict, nullable=True)
+    google_calendar_settings = Column(JSON, default=dict, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
@@ -40,6 +41,7 @@ class FormResponseData(Base):
     status = Column(String, default="CONCLUIDO", nullable=False) # 'CONCLUIDO', 'PARCIAL'
     completion_percent = Column(Float, default=100.0, nullable=False)
     answers = Column(JSON, default=list, nullable=False)
+    google_calendar_event_id = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
@@ -65,6 +67,29 @@ class WebhookDeliveryLog(Base):
     __table_args__ = (
         Index("idx_webhook_logs_form_created", "form_id", "created_at"),
     )
+
+
+class ScheduledWebhook(Base):
+    __tablename__ = "scheduled_webhooks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    form_id = Column(Integer, ForeignKey("forms.id", ondelete="CASCADE"), nullable=False, index=True)
+    response_id = Column(Integer, ForeignKey("form_responses.id", ondelete="CASCADE"), nullable=True, index=True)
+    reminder_type = Column(String, nullable=False)  # "morning" | "before_meeting"
+    scheduled_for = Column(DateTime, nullable=False, index=True)  # UTC
+    webhook_url = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    status = Column(String, default="PENDING", nullable=False, index=True)  # PENDING, SENT, FAILED, CANCELLED
+    status_code = Column(Integer, nullable=True)
+    sent_at = Column(DateTime, nullable=True)
+    error_message = Column(String, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+    __table_args__ = (
+        Index("idx_scheduled_webhooks_pending", "status", "scheduled_for"),
+        Index("idx_scheduled_webhooks_form_id", "form_id"),
+    )
+
 
 
 

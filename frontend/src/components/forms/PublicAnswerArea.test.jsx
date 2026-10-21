@@ -134,4 +134,31 @@ describe('PublicAnswerArea Component', () => {
     expect(screen.getByText('Você não atende aos requisitos.')).toBeInTheDocument();
     expect(screen.queryByTestId('standard-input')).toBeNull();
   });
+
+  it('renders interactive google_calendar booking component without plain text input', () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ slots_by_date: {} })
+    });
+
+    const currentQ = {
+      id: 'q_cal',
+      type: 'google_calendar'
+    };
+
+    render(
+      <PublicAnswerArea
+        currentQ={currentQ}
+        answers={{}}
+        selectedDdi="+55"
+        setSelectedDdi={vi.fn()}
+        onAnswerChange={vi.fn()}
+        onNext={vi.fn()}
+        formSlug="slug-teste"
+      />
+    );
+
+    expect(screen.getByTestId('interactive-booking-calendar')).toBeInTheDocument();
+    expect(screen.queryByTestId('calendar-input')).toBeNull();
+  });
 });
