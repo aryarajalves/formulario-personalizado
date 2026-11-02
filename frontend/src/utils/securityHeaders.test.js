@@ -42,4 +42,17 @@ describe('Nginx Security Headers Hardening (OWASP Report CyberPulse)', () => {
     expect(content).toContain('microphone=()');
     expect(content).toContain('geolocation=()');
   });
+
+  it('deve configurar limit_req_zone e limit_req para protecao contra forca bruta e DDoS', () => {
+    expect(content).toContain('limit_req_zone');
+    expect(content).toContain('limit_req zone=');
+    expect(content).toContain('limit_req_status 429;');
+  });
+
+  it('deve conter cabecalhos identificadores de Rate Limiting (Item #4 do Relatorio 8)', () => {
+    expect(content).toContain('X-RateLimit-Limit');
+    expect(content).toContain('X-RateLimit-Remaining');
+    expect(content).toContain('RateLimit-Limit');
+    expect(content).toContain('RateLimit-Remaining');
+  });
 });
