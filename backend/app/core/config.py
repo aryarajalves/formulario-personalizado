@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     # Criptografia em Repouso de Dados Sensíveis (Tokens OAuth Google via Fernet)
     SECURITY_ENCRYPTION_KEY: str = os.getenv("SECURITY_ENCRYPTION_KEY", "")
 
+    # Documentação Swagger/OpenAPI Privada (HTTP Basic Auth)
+    DOCS_USERNAME: str = os.getenv("DOCS_USERNAME", "admin_dev")
+    DOCS_PASSWORD: str = os.getenv("DOCS_PASSWORD", "SenhaSuperSeguraDev@2026!")
+
+    # Chave Secreta para Auditoria CyberPulse (Catálogo de Introspecção de Rotas)
+    CYBERPULSE_AUDIT_SECRET: str = os.getenv("CYBERPULSE_AUDIT_SECRET", "cyberpulse_secret_key_audit_2026")
+
     @property
     def cors_origins_list(self) -> list:
         if not self.CORS_ORIGINS:

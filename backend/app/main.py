@@ -1,10 +1,16 @@
+import secrets
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 from app.core.security import get_password_hash
+from app.core.logger import logger
 from app.models.user import User
 from app.models.backup import BackupSchedule, BackupHistory
 from app.models.form import Form
@@ -78,11 +84,43 @@ async def lifespan(app: FastAPI):
     if scheduler.running:
         scheduler.shutdown()
 
+# Autenticação HTTP Basic para Documentação Privada
+docs_security = HTTPBasic()
+
+def authenticate_docs(credentials: HTTPBasicCredentials = Depends(docs_security)):
+    """Valida usuário e senha para acesso à documentação da API."""
+    user_ok = secrets.compare_digest(credentials.username, settings.DOCS_USERNAME)
+    pass_ok = secrets.compare_digest(credentials.password, settings.DOCS_PASSWORD)
+    if not (user_ok and pass_ok):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciais inválidas para acessar a documentação.",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+# Inicializa FastAPI com documentação pública desativada por padrão
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    docs_url=None,      # Desativa /docs público
+    redoc_url=None,     # Desativa /redoc público
+    openapi_url=None,   # Desativa /openapi.json público
     lifespan=lifespan
 )
+
+# Rotas de documentação privada protegidas por HTTP Basic Auth
+@app.get("/docs", include_in_schema=False)
+def get_private_swagger(username: str = Depends(authenticate_docs)):
+    return get_swagger_ui_html(openapi_url=f"{settings.API_V1_STR}/openapi.json", title=f"{app.title} - Swagger")
+
+@app.get("/redoc", include_in_schema=False)
+def get_private_redoc(username: str = Depends(authenticate_docs)):
+    return get_redoc_html(openapi_url=f"{settings.API_V1_STR}/openapi.json", title=f"{app.title} - ReDoc")
+
+@app.get(f"{settings.API_V1_STR}/openapi.json", include_in_schema=False)
+@app.get("/openapi.json", include_in_schema=False)
+def get_private_openapi(username: str = Depends(authenticate_docs)):
+    return get_openapi(title=app.title, version="1.0.0", routes=app.routes)
 
 app.add_middleware(
     CORSMiddleware,
@@ -93,10 +131,6 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
-from fastapi import Request
-from fastapi.responses import JSONResponse
-from app.core.logger import logger
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

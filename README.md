@@ -180,6 +180,8 @@ A aplicação conta com conformidade completa com as diretrizes do OWASP para en
 - **Proteção contra MIME-Sniffing (`X-Content-Type-Options: nosniff`):** Impede execução de arquivos com tipos incorretos.
 - **Privacidade de Referrer (`Referrer-Policy: strict-origin-when-cross-origin`):** Evita vazamento de caminhos e parâmetros em links externos.
 - **Restrição de Recursos de Hardware (`Permissions-Policy`):** Desativação de permissões desnecessárias do navegador (câmera, microfone, geolocalização).
+- **Documentação de API Privada (HTTP Basic Auth):** Rotas `/docs`, `/redoc` e `/openapi.json` trancadas por autenticação básica em produção, impedindo mapeamento malicioso de endpoints.
+- **Catálogo de Auditoria CyberPulse (`GET /api/v1/cyberpulse/catalog`):** Endpoint de introspecção técnica protegido por token secreto (`X-CyberPulse-Secret`), permitindo escaneamento automatizado e auditoria contínua de conformidade.
 
 ---
 
