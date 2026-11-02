@@ -163,6 +163,23 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.reminder-event-input {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.825rem;
+  font-family: monospace;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.reminder-event-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 .reminder-event-badge {
   display: inline-flex;
   align-items: center;
@@ -226,26 +243,44 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.webhook-test-buttons {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .test-reminder-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.6rem 1rem;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
+  padding: 0.6rem 0.95rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: 8px;
-  font-size: 0.825rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #334155;
+  color: #1d4ed8;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .test-reminder-btn:hover:not(:disabled) {
-  background: #eff6ff;
+  background: #dbeafe;
   border-color: #93c5fd;
-  color: #1d4ed8;
+  color: #1e40af;
+}
+
+.test-reminder-btn.secondary {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.test-reminder-btn.secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
 }
 
 .test-reminder-btn:disabled {

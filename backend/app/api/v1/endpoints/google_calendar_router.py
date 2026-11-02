@@ -147,6 +147,7 @@ def get_form_scheduled_reminders(
             "response_id": r.response_id,
             "reminder_type": r.reminder_type,
             "reminder_label": p.get("reminder_label") or ("Lembrete Matinal" if r.reminder_type == "morning" else ("Disparo de Teste" if r.reminder_type == "test" else "Lembrete Antecedência")),
+            "event": p.get("event") or ("lembrete_dia" if r.reminder_type == "morning" else "lembrete_30min"),
             "contact_name": p.get("contact_name") or ("Teste Manual" if r.reminder_type == "test" else "Contato"),
             "contact_phone": p.get("contact_phone") or "",
             "contact_email": p.get("contact_email") or "",
@@ -210,8 +211,17 @@ def test_dispatch_calendar_reminder(
         )
 
     reminder_type = payload.get("reminder_type", "morning")
+    cal_settings = form.google_calendar_settings or {}
+    custom_event = (payload.get("event") or "").strip()
+    if not custom_event:
+        if reminder_type == "morning":
+            custom_event = (cal_settings.get("reminder_morning_event_name") or "lembrete_dia").strip()
+        else:
+            default_before_name = f"lembrete_{cal_settings.get('reminder_before_minutes', 30)}min"
+            custom_event = (cal_settings.get("reminder_before_event_name") or default_before_name).strip()
+
     test_payload = {
-        "event": "booking_reminder_morning" if reminder_type == "morning" else "booking_reminder_before_meeting",
+        "event": custom_event,
         "reminder_type": reminder_type,
         "is_test": True,
         "form_id": form.id,
@@ -221,7 +231,7 @@ def test_dispatch_calendar_reminder(
         "contact_phone": "+55 85 99999-9999",
         "scheduled_datetime": "2026-10-23T14:00:00-03:00",
         "formatted_datetime": "23/10/26 14:00",
-        "reminder_label": "Teste de Lembrete de Reunião"
+        "reminder_label": f"Teste de Lembrete ({custom_event})"
     }
 
     try:
@@ -333,7 +343,7 @@ def update_scheduled_reminder(
                 detail=f"Formato de data inválido: {dt_err}"
             )
 
-    # Atualiza dados no payload (nome, telefone, email)
+    # Atualiza dados no payload (nome, telefone, email, event)
     p = dict(reminder.payload or {})
     if "contact_name" in data:
         p["contact_name"] = str(data["contact_name"]).strip()
@@ -341,6 +351,8 @@ def update_scheduled_reminder(
         p["contact_phone"] = str(data["contact_phone"]).strip()
     if "contact_email" in data:
         p["contact_email"] = str(data["contact_email"]).strip()
+    if "event" in data:
+        p["event"] = str(data["event"]).strip()
 
     reminder.payload = p
     flag_modified(reminder, "payload")
@@ -354,6 +366,7 @@ def update_scheduled_reminder(
         "reminder": {
             "id": reminder.id,
             "scheduled_for_iso": reminder.scheduled_for.isoformat() if reminder.scheduled_for else None,
+            "event": (reminder.payload or {}).get("event"),
             "contact_name": (reminder.payload or {}).get("contact_name"),
             "contact_phone": (reminder.payload or {}).get("contact_phone"),
             "status": reminder.status

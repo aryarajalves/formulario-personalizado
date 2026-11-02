@@ -157,6 +157,11 @@ export default function RemindersHistoryTable({
                           `⏰ ${item.reminder_label || 'Antecedência'}`
                         )}
                       </span>
+                      {item.event && (
+                        <div className="reminder-event-code" style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                          <code>{item.event}</code>
+                        </div>
+                      )}
                       {item.meeting_datetime && (
                         <div className="reminder-meeting-date">
                           Reunião: {item.meeting_datetime}

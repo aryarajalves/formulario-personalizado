@@ -54,6 +54,8 @@ describe('GoogleCalendarRemindersConfig Component', () => {
     const onToggleBefore = vi.fn();
     const onChangeMorningTime = vi.fn();
     const onChangeBeforeMinutes = vi.fn();
+    const onChangeMorningEventName = vi.fn();
+    const onChangeBeforeEventName = vi.fn();
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -73,10 +75,14 @@ describe('GoogleCalendarRemindersConfig Component', () => {
           onChangeReminderMorningEnabled={onToggleMorning}
           reminderMorningTime="09:00"
           onChangeReminderMorningTime={onChangeMorningTime}
+          reminderMorningEventName="lembrete_dia"
+          onChangeReminderMorningEventName={onChangeMorningEventName}
           reminderBeforeEnabled={true}
           onChangeReminderBeforeEnabled={onToggleBefore}
           reminderBeforeMinutes={30}
           onChangeReminderBeforeMinutes={onChangeBeforeMinutes}
+          reminderBeforeEventName="lembrete_30min"
+          onChangeReminderBeforeEventName={onChangeBeforeEventName}
           reminderWebhookUrl=""
           onChangeReminderWebhookUrl={vi.fn()}
         />
@@ -91,6 +97,10 @@ describe('GoogleCalendarRemindersConfig Component', () => {
     fireEvent.change(screen.getByTestId('select-reminder-morning-time'), { target: { value: '08:00' } });
     expect(onChangeMorningTime).toHaveBeenCalledWith('08:00');
 
+    // Change morning event name
+    fireEvent.change(screen.getByTestId('input-reminder-morning-event-name'), { target: { value: 'meu_lembrete_dia' } });
+    expect(onChangeMorningEventName).toHaveBeenCalledWith('meu_lembrete_dia');
+
     // Toggle before meeting
     fireEvent.click(screen.getByTestId('toggle-reminder-before'));
     expect(onToggleBefore).toHaveBeenCalledWith(false);
@@ -98,6 +108,10 @@ describe('GoogleCalendarRemindersConfig Component', () => {
     // Change before minutes
     fireEvent.change(screen.getByTestId('select-reminder-before-minutes'), { target: { value: '60' } });
     expect(onChangeBeforeMinutes).toHaveBeenCalledWith(60);
+
+    // Change before event name
+    fireEvent.change(screen.getByTestId('input-reminder-before-event-name'), { target: { value: 'meu_lembrete_60min' } });
+    expect(onChangeBeforeEventName).toHaveBeenCalledWith('meu_lembrete_60min');
   });
 
   it('renders list of scheduled reminders and triggers test webhook dispatch', async () => {
@@ -160,14 +174,31 @@ describe('GoogleCalendarRemindersConfig Component', () => {
     expect(screen.getByText(/23\/10\/26 14:00/)).toBeInTheDocument();
     expect(screen.getByText('Aguardando Horário')).toBeInTheDocument();
 
-    // Clica em testar disparo
-    const testBtn = screen.getByTestId('test-reminder-webhook-btn');
-    fireEvent.click(testBtn);
+    // Clica em testar disparo matinal
+    const testMorningBtn = screen.getByTestId('test-reminder-webhook-btn');
+    fireEvent.click(testMorningBtn);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/reminders/test'),
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"event":"lembrete_dia"')
+        })
+      );
+    });
+
+    // Clica em testar disparo de antecedência
+    const testBeforeBtn = screen.getByTestId('test-reminder-before-btn');
+    fireEvent.click(testBeforeBtn);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/reminders/test'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"event":"lembrete_30min"')
+        })
       );
     });
   });

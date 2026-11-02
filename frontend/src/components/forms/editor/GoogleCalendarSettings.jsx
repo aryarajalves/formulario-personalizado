@@ -55,8 +55,10 @@ export default function GoogleCalendarSettings({
   const [eventColorId, setEventColorId] = useState('9');
   const [reminderMorningEnabled, setReminderMorningEnabled] = useState(true);
   const [reminderMorningTime, setReminderMorningTime] = useState('09:00');
+  const [reminderMorningEventName, setReminderMorningEventName] = useState('lembrete_dia');
   const [reminderBeforeEnabled, setReminderBeforeEnabled] = useState(true);
   const [reminderBeforeMinutes, setReminderBeforeMinutes] = useState(30);
+  const [reminderBeforeEventName, setReminderBeforeEventName] = useState('lembrete_30min');
   const [reminderWebhookUrl, setReminderWebhookUrl] = useState('');
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
 
@@ -92,8 +94,10 @@ export default function GoogleCalendarSettings({
         if (s.event_color_id) setEventColorId(String(s.event_color_id));
         if (s.reminder_morning_enabled !== undefined) setReminderMorningEnabled(Boolean(s.reminder_morning_enabled));
         if (s.reminder_morning_time) setReminderMorningTime(s.reminder_morning_time);
+        if (s.reminder_morning_event_name) setReminderMorningEventName(s.reminder_morning_event_name);
         if (s.reminder_before_enabled !== undefined) setReminderBeforeEnabled(Boolean(s.reminder_before_enabled));
         if (s.reminder_before_minutes !== undefined) setReminderBeforeMinutes(Number(s.reminder_before_minutes));
+        if (s.reminder_before_event_name) setReminderBeforeEventName(s.reminder_before_event_name);
         if (s.reminder_webhook_url !== undefined) setReminderWebhookUrl(s.reminder_webhook_url);
       }
     } catch (err) {
@@ -168,8 +172,10 @@ export default function GoogleCalendarSettings({
         event_color_id: eventColorId,
         reminder_morning_enabled: reminderMorningEnabled,
         reminder_morning_time: reminderMorningTime,
+        reminder_morning_event_name: reminderMorningEventName || 'lembrete_dia',
         reminder_before_enabled: reminderBeforeEnabled,
         reminder_before_minutes: reminderBeforeMinutes,
+        reminder_before_event_name: reminderBeforeEventName || `lembrete_${reminderBeforeMinutes || 30}min`,
         reminder_webhook_url: reminderWebhookUrl
       };
 
@@ -392,10 +398,14 @@ export default function GoogleCalendarSettings({
                 onChangeReminderMorningEnabled={setReminderMorningEnabled}
                 reminderMorningTime={reminderMorningTime}
                 onChangeReminderMorningTime={setReminderMorningTime}
+                reminderMorningEventName={reminderMorningEventName}
+                onChangeReminderMorningEventName={setReminderMorningEventName}
                 reminderBeforeEnabled={reminderBeforeEnabled}
                 onChangeReminderBeforeEnabled={setReminderBeforeEnabled}
                 reminderBeforeMinutes={reminderBeforeMinutes}
                 onChangeReminderBeforeMinutes={setReminderBeforeMinutes}
+                reminderBeforeEventName={reminderBeforeEventName}
+                onChangeReminderBeforeEventName={setReminderBeforeEventName}
                 reminderWebhookUrl={reminderWebhookUrl}
                 onChangeReminderWebhookUrl={setReminderWebhookUrl}
               />

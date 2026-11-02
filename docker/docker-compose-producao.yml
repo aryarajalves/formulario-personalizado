@@ -209,6 +209,16 @@ services:
         # Porta interna do Nginx
         - traefik.http.services.formulario_frontend.loadbalancer.server.port=80
         - traefik.http.services.formulario_frontend.loadbalancer.passHostHeader=true
+        # Cabecalhos OWASP de Seguranca via Traefik Middleware (Hardening de Borda)
+        - traefik.http.routers.formulario_frontend.middlewares=formulario-sec-headers
+        - traefik.http.middlewares.formulario-sec-headers.headers.sslredirect=true
+        - traefik.http.middlewares.formulario-sec-headers.headers.stsseconds=31536000
+        - traefik.http.middlewares.formulario-sec-headers.headers.stsincludesubdomains=true
+        - traefik.http.middlewares.formulario-sec-headers.headers.stspreload=true
+        - traefik.http.middlewares.formulario-sec-headers.headers.customframeoptionsvalue=SAMEORIGIN
+        - traefik.http.middlewares.formulario-sec-headers.headers.contenttypenosniff=true
+        - traefik.http.middlewares.formulario-sec-headers.headers.browserxssfilter=true
+        - traefik.http.middlewares.formulario-sec-headers.headers.referrerpolicy=strict-origin-when-cross-origin
 
 # ==============================================================================
 # Definição Global dos Volumes do Formulário

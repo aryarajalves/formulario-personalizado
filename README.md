@@ -170,5 +170,18 @@ python scripts/audit_security.py
 
 ---
 
+## 🔒 Segurança e Hardening de Servidor (OWASP)
+
+A aplicação conta com conformidade completa com as diretrizes do OWASP para entrega HTTP segura em produção:
+- **Ocultação de Versão (`server_tokens off;`):** Previne fingerprinting e exposição de versão do Nginx.
+- **HSTS (`Strict-Transport-Security`):** Forçamento de conexões seguras HTTPS por 1 ano com suporte a subdomínios e preload.
+- **Content-Security-Policy (CSP):** Proteção robusta contra injeções de script (XSS) compatível com React SPA.
+- **Prevenção de Clickjacking (`X-Frame-Options: SAMEORIGIN`):** Protege formulários e interfaces contra incorporação maliciosa em iframes.
+- **Proteção contra MIME-Sniffing (`X-Content-Type-Options: nosniff`):** Impede execução de arquivos com tipos incorretos.
+- **Privacidade de Referrer (`Referrer-Policy: strict-origin-when-cross-origin`):** Evita vazamento de caminhos e parâmetros em links externos.
+- **Restrição de Recursos de Hardware (`Permissions-Policy`):** Desativação de permissões desnecessárias do navegador (câmera, microfone, geolocalização).
+
+---
+
 ## 📄 Licença
 Distribuído sob licença proprietária. Todos os direitos reservados.

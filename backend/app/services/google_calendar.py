@@ -50,8 +50,10 @@ DEFAULT_CALENDAR_SETTINGS = {
     "event_color_id": "9",
     "reminder_morning_enabled": True,
     "reminder_morning_time": "09:00",
+    "reminder_morning_event_name": "lembrete_dia",
     "reminder_before_enabled": True,
     "reminder_before_minutes": 30,
+    "reminder_before_event_name": "lembrete_30min",
     "reminder_webhook_url": "",
 }
 
@@ -663,8 +665,9 @@ def schedule_booking_webhook_reminders(
         # Só agenda se for no futuro
         if morning_dt > now_br:
             morning_utc = morning_dt.astimezone(timezone.utc)
+            morning_event = (cal_settings.get("reminder_morning_event_name") or "lembrete_dia").strip()
             payload_morning = {
-                "event": "booking_reminder_morning",
+                "event": morning_event,
                 "reminder_type": "morning",
                 "form_id": form.id,
                 "form_title": form.title,
@@ -687,7 +690,7 @@ def schedule_booking_webhook_reminders(
                 payload=payload_morning,
                 status="PENDING"
             ))
-            logger.info(f"[REMINDER SCHEDULED] Lembrete matinal agendado para {morning_dt} (UTC: {morning_utc})")
+            logger.info(f"[REMINDER SCHEDULED] Lembrete matinal agendado para {morning_dt} (UTC: {morning_utc}) com evento '{morning_event}'")
 
     # 5. Lembrete de Antecedência Imediata (X minutos antes)
     if cal_settings.get("reminder_before_enabled", True):
@@ -700,8 +703,10 @@ def schedule_booking_webhook_reminders(
         # Só agenda se for no futuro
         if before_dt > now_br:
             before_utc = before_dt.astimezone(timezone.utc)
+            default_before_name = f"lembrete_{minutes_before}min"
+            before_event = (cal_settings.get("reminder_before_event_name") or default_before_name).strip()
             payload_before = {
-                "event": "booking_reminder_before_meeting",
+                "event": before_event,
                 "reminder_type": "before_meeting",
                 "minutes_before": minutes_before,
                 "form_id": form.id,

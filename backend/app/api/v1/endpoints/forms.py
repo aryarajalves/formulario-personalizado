@@ -430,8 +430,8 @@ def update_google_calendar_settings(
     allowed_fields = [
         "working_days", "time_ranges", "start_time", "end_time",
         "slot_duration", "buffer_minutes", "event_title", "event_description", "event_color_id",
-        "reminder_morning_enabled", "reminder_morning_time",
-        "reminder_before_enabled", "reminder_before_minutes", "reminder_webhook_url"
+        "reminder_morning_enabled", "reminder_morning_time", "reminder_morning_event_name",
+        "reminder_before_enabled", "reminder_before_minutes", "reminder_before_event_name", "reminder_webhook_url"
     ]
     for field in allowed_fields:
         if field in payload:

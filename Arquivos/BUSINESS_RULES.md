@@ -99,6 +99,8 @@ Este arquivo registra regras de negócio oficiais e perguntas respondidas pelo p
     3. **Excluir Lembrete (com popup):** Remove o lembrete da fila de agendamentos, impedindo seu envio futuro, com confirmação via popup de exclusão centralizado.
 - [x] Como deve funcionar a paginação da listagem de Histórico de Disparos e Lembretes Agendados?
   - **Decisão:** A tabela de lembretes possui sistema de paginação limitando a exibição a **20 itens por página**, com suporte via query parameters `page` e `limit=20` no backend e rodapé de paginação no frontend com indicador ('Mostrando X de Y lembretes (20 por página)'), indicador de página atual ('Página X de Y') e botões de navegação 'Anterior' e 'Próxima', mantendo contadores independentes para as abas 'Todos', 'Disparados' e 'Agendados'.
+- [x] Como o sistema diferencia os eventos de lembrete enviados no webhook para o ZapVoice / ZapJords ou plataformas de automação?
+  - **Decisão:** No payload JSON enviado para a URL de webhook, a propriedade `event` envia nomes distintos e configuráveis para cada um dos 2 lembretes (padrão: `lembrete_dia` para o matinal e `lembrete_30min` para a antecedência, ou `lembrete_{min}min`). O usuário pode personalizar o nome exato do evento diretamente em cada card no painel de configurações. O painel também disponibiliza botões dedicados de teste para cada tipo de lembrete ('Testar No Dia' e 'Testar Antecedência'), permitindo ao ZapJords/ZapVoice mapear ações separadas na mesma integração e evitar falso positivo de evento duplicado.
 
 
 

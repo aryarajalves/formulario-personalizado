@@ -66,6 +66,10 @@ def test_booking_submission_schedules_webhooks():
     assert "morning" in types
     assert "before_meeting" in types
 
+    events = {r["reminder_type"]: r.get("event") for r in data["reminders"]}
+    assert events["morning"] == "lembrete_dia"
+    assert events["before_meeting"] == "lembrete_30min"
+
 def test_dispatch_pending_scheduled_webhooks_worker():
     # Inserir um lembrete pendente com data no passado para o worker processar
     db = TestingSessionLocal()
@@ -261,4 +265,67 @@ def test_get_form_scheduled_reminders_pagination_and_filters():
     assert pend_data["total"] == 20
     assert len(pend_data["reminders"]) == 20
     assert all(r["status"] == "PENDING" for r in pend_data["reminders"])
+
+
+def test_custom_event_names_in_reminders_and_updates():
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": settings.SUPERADMIN_EMAIL,
+        "password": settings.SUPERADMIN_PASSWORD
+    })
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_res = client.post("/api/v1/forms", json={
+        "title": "Form Event Names Test",
+        "webhook_url": "https://webhook.site/custom-events"
+    }, headers=headers)
+    form_id = create_res.json()["id"]
+    form_slug = create_res.json()["slug"]
+
+    # Salva configurações com nomes de eventos personalizados
+    settings_res = client.put(f"/api/v1/forms/{form_id}/integrations/google-calendar/settings", json={
+        "reminder_morning_enabled": True,
+        "reminder_morning_time": "08:30",
+        "reminder_morning_event_name": "zap_lembrete_manha",
+        "reminder_before_enabled": True,
+        "reminder_before_minutes": 15,
+        "reminder_before_event_name": "zap_lembrete_15min",
+        "reminder_webhook_url": "https://webhook.site/custom-events"
+    }, headers=headers)
+    assert settings_res.status_code == 200
+
+    # Submissão de agendamento
+    future_date = datetime.now(BRAZIL_TZ) + timedelta(days=2)
+    future_booking = future_date.replace(hour=16, minute=0, second=0, microsecond=0)
+    sub_res = client.post(f"/api/v1/forms/public/{form_slug}/submit", json={
+        "contact_name": "Maria Teste Evento",
+        "contact_email": "maria@teste.com",
+        "contact_phone": "+55 85 98888-7777",
+        "answers": [
+            {
+                "question_title": "Data",
+                "question_type": "google_calendar",
+                "answer": future_booking.isoformat()
+            }
+        ]
+    })
+    assert sub_res.status_code == 200
+
+    # Consulta lembretes e valida nomes dos eventos no JSON
+    rem_res = client.get(f"/api/v1/forms/{form_id}/integrations/google-calendar/reminders", headers=headers)
+    assert rem_res.status_code == 200
+    reminders = rem_res.json()["reminders"]
+    assert len(reminders) == 2
+
+    event_map = {r["reminder_type"]: r.get("event") for r in reminders}
+    assert event_map["morning"] == "zap_lembrete_manha"
+    assert event_map["before_meeting"] == "zap_lembrete_15min"
+
+    # Atualiza o evento via PATCH
+    morning_id = [r["id"] for r in reminders if r["reminder_type"] == "morning"][0]
+    patch_res = client.patch(f"/api/v1/forms/{form_id}/integrations/google-calendar/reminders/{morning_id}", json={
+        "event": "zap_lembrete_atualizado"
+    }, headers=headers)
+    assert patch_res.status_code == 200
+    assert patch_res.json()["reminder"]["event"] == "zap_lembrete_atualizado"
 

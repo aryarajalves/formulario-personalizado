@@ -39,10 +39,14 @@ export default function GoogleCalendarRemindersConfig({
   onChangeReminderMorningEnabled,
   reminderMorningTime,
   onChangeReminderMorningTime,
+  reminderMorningEventName,
+  onChangeReminderMorningEventName,
   reminderBeforeEnabled,
   onChangeReminderBeforeEnabled,
   reminderBeforeMinutes,
   onChangeReminderBeforeMinutes,
+  reminderBeforeEventName,
+  onChangeReminderBeforeEventName,
   reminderWebhookUrl,
   onChangeReminderWebhookUrl
 }) {
@@ -113,8 +117,12 @@ export default function GoogleCalendarRemindersConfig({
       return;
     }
 
+    const eventName = type === 'morning'
+      ? (reminderMorningEventName || 'lembrete_dia')
+      : (reminderBeforeEventName || `lembrete_${reminderBeforeMinutes || 30}min`);
+
     try {
-      setTestingWebhook(true);
+      setTestingWebhook(type);
       const token = localStorage.getItem('auth_token');
       const res = await fetch(`/api/v1/forms/${formId}/integrations/google-calendar/reminders/test`, {
         method: 'POST',
@@ -124,7 +132,8 @@ export default function GoogleCalendarRemindersConfig({
         },
         body: JSON.stringify({
           webhook_url: targetUrl,
-          reminder_type: type
+          reminder_type: type,
+          event: eventName
         })
       });
 
@@ -133,11 +142,11 @@ export default function GoogleCalendarRemindersConfig({
         throw new Error(data.detail || 'Falha ao testar webhook de lembrete.');
       }
 
-      addToast('Webhook de teste enviado com sucesso! Verifique a resposta abaixo.', 'success');
+      addToast(`Webhook de teste ('${eventName}') enviado com sucesso!`, 'success');
     } catch (err) {
       addToast(err.message || 'Erro ao testar lembrete.', 'error');
     } finally {
-      setTestingWebhook(false);
+      setTestingWebhook(null);
       fetchReminders(page, filterMode);
     }
   };
@@ -285,9 +294,21 @@ export default function GoogleCalendarRemindersConfig({
                   </option>
                 ))}
               </select>
+
+              <label htmlFor="reminder-morning-event-name">Nome do evento no JSON:</label>
+              <input
+                id="reminder-morning-event-name"
+                type="text"
+                className="reminder-event-input"
+                placeholder="lembrete_dia"
+                value={reminderMorningEventName || ''}
+                onChange={(e) => onChangeReminderMorningEventName(e.target.value)}
+                data-testid="input-reminder-morning-event-name"
+              />
+
               <div className="reminder-event-badge">
                 <Sparkles size={12} color="#2563eb" />
-                <span>Evento enviado: <code>booking_reminder_morning</code></span>
+                <span>Evento enviado: <code>{reminderMorningEventName || 'lembrete_dia'}</code></span>
               </div>
             </div>
           )}
@@ -333,9 +354,21 @@ export default function GoogleCalendarRemindersConfig({
                   </option>
                 ))}
               </select>
+
+              <label htmlFor="reminder-before-event-name">Nome do evento no JSON:</label>
+              <input
+                id="reminder-before-event-name"
+                type="text"
+                className="reminder-event-input"
+                placeholder={`lembrete_${reminderBeforeMinutes || 30}min`}
+                value={reminderBeforeEventName || ''}
+                onChange={(e) => onChangeReminderBeforeEventName(e.target.value)}
+                data-testid="input-reminder-before-event-name"
+              />
+
               <div className="reminder-event-badge">
                 <Sparkles size={12} color="#2563eb" />
-                <span>Evento enviado: <code>booking_reminder_before_meeting</code></span>
+                <span>Evento enviado: <code>{reminderBeforeEventName || `lembrete_${reminderBeforeMinutes || 30}min`}</code></span>
               </div>
             </div>
           )}
@@ -362,26 +395,49 @@ export default function GoogleCalendarRemindersConfig({
             data-testid="input-reminder-webhook-url"
           />
 
-          <button
-            type="button"
-            className="test-reminder-btn"
-            onClick={() => handleTestReminder('morning')}
-            disabled={testingWebhook || (!reminderWebhookUrl && !formWebhookUrl)}
-            data-testid="test-reminder-webhook-btn"
-            title="Enviar uma carga JSON de teste para a URL de webhook"
-          >
-            {testingWebhook ? (
-              <>
-                <Loader2 size={14} className="spinner-icon" />
-                <span>Enviando Teste...</span>
-              </>
-            ) : (
-              <>
-                <Send size={14} />
-                <span>Testar Disparo</span>
-              </>
-            )}
-          </button>
+          <div className="webhook-test-buttons">
+            <button
+              type="button"
+              className="test-reminder-btn"
+              onClick={() => handleTestReminder('morning')}
+              disabled={Boolean(testingWebhook) || (!reminderWebhookUrl && !formWebhookUrl)}
+              data-testid="test-reminder-webhook-btn"
+              title={`Disparar teste com o evento matinal: ${reminderMorningEventName || 'lembrete_dia'}`}
+            >
+              {testingWebhook === 'morning' ? (
+                <>
+                  <Loader2 size={13} className="spinner-icon" />
+                  <span>Enviando...</span>
+                </>
+              ) : (
+                <>
+                  <Send size={13} />
+                  <span>Testar No Dia ({reminderMorningEventName || 'lembrete_dia'})</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="test-reminder-btn secondary"
+              onClick={() => handleTestReminder('before_meeting')}
+              disabled={Boolean(testingWebhook) || (!reminderWebhookUrl && !formWebhookUrl)}
+              data-testid="test-reminder-before-btn"
+              title={`Disparar teste com o evento de antecedência: ${reminderBeforeEventName || `lembrete_${reminderBeforeMinutes || 30}min`}`}
+            >
+              {testingWebhook === 'before_meeting' ? (
+                <>
+                  <Loader2 size={13} className="spinner-icon" />
+                  <span>Enviando...</span>
+                </>
+              ) : (
+                <>
+                  <Send size={13} />
+                  <span>Testar Antecedência ({reminderBeforeEventName || `lembrete_${reminderBeforeMinutes || 30}min`})</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
