@@ -182,6 +182,7 @@ A aplicação conta com conformidade completa com as diretrizes do OWASP para en
 - **Restrição de Recursos de Hardware (`Permissions-Policy`):** Desativação de permissões desnecessárias do navegador (câmera, microfone, geolocalização).
 - **Documentação de API Privada (HTTP Basic Auth):** Rotas `/docs`, `/redoc` e `/openapi.json` trancadas por autenticação básica em produção, impedindo mapeamento malicioso de endpoints.
 - **Catálogo de Auditoria CyberPulse (`GET /api/v1/cyberpulse/catalog`):** Endpoint de introspecção técnica protegido por token secreto (`X-CyberPulse-Secret`), permitindo escaneamento automatizado e auditoria contínua de conformidade.
+- **Rate Limiting no Nginx e Traefik:** Proteção contra força bruta, scraping abusivo e ataques de negação de serviço (DDoS) via zonas de controle na memória e injeção de cabeçalhos informativos (`X-RateLimit-Limit`, `RateLimit-Limit`).
 
 ---
 
